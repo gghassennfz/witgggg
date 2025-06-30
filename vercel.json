@@ -1,0 +1,24 @@
+{
+    "version": 2,
+    "builds": [
+      {
+        "src": "Project-Management-React-JS/package.json",
+        "use": "@vercel/static-build",
+        "config": { "distDir": "dist" }
+      },
+      {
+        "src": "WitG-backend/src/index.js",
+        "use": "@vercel/node"
+      }
+    ],
+    "routes": [
+      {
+        "src": "/api/(.*)",
+        "dest": "/WitG-backend/src/index.js"
+      },
+      {
+        "src": "/(.*)",
+        "dest": "/Project-Management-React-JS/$1"
+      }
+    ]
+  }
