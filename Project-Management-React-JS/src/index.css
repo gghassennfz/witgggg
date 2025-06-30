@@ -1,0 +1,46 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap");
+@import url("https://unicons.iconscout.com/release/v4.0.8/css/line.css");
+
+:root {
+  --background-primary: #111827;
+  --background-secondary: #1f2937;
+  --background-tertiary: #374151;
+  --border-primary: #374151;
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --accent-primary: #4f46e5;
+  --accent-primary-hover: #4338ca;
+  --text-on-accent: #ffffff;
+}
+
+[data-theme='light'] {
+  --background-primary: #f9fafb;
+  --background-secondary: #ffffff;
+  --background-tertiary: #f3f4f6;
+  --border-primary: #e5e7eb;
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --accent-primary: #4f46e5;
+  --accent-primary-hover: #6366f1;
+  --text-on-accent: #ffffff;
+}
+
+body {
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--background-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+i {
+  font-size: 16px;
+}

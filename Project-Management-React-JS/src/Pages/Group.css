@@ -1,0 +1,147 @@
+:root {
+    --border-secondary: #333;
+    --background-tertiary: #2a2a2a;
+}
+
+.group-page {
+    padding: 2rem;
+}
+
+.group-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-secondary);
+}
+
+.group-header h1 {
+    font-size: 2.5rem;
+    margin: 0;
+}
+
+.group-header p {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+}
+
+.group-layout {
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    gap: 2rem;
+}
+
+.group-main-content h2, .group-sidebar h2 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-secondary);
+    padding-bottom: 0.5rem;
+}
+
+/* Add Task Form */
+.add-task-form {
+    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.add-task-form input, .add-task-form textarea {
+    width: 100%;
+    padding: 0.75rem;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 6px;
+    color: var(--text-primary);
+}
+
+.add-task-form button {
+    align-self: flex-start;
+    padding: 0.5rem 1rem;
+    background-color: var(--accent-primary);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.add-task-form button:hover {
+    background-color: var(--accent-primary-hover);
+}
+
+/* Task List */
+.task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.task-card {
+    background-color: var(--background-secondary);
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid var(--accent-primary);
+}
+
+.task-card.status-in-progress { border-color: orange; }
+.task-card.status-done { border-color: green; }
+
+.task-card h3 {
+    margin: 0 0 0.5rem 0;
+}
+
+.task-card p {
+    color: var(--text-secondary);
+    margin: 0 0 1rem 0;
+}
+
+.task-meta {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* Sidebar Widgets */
+.group-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.sidebar-widget {
+    background-color: var(--background-tertiary);
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.member-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.member-list li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-secondary);
+}
+
+.member-list li:last-child {
+    border-bottom: none;
+}
+
+/* Activity Log */
+.activity-log {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.log-item {
+    font-size: 0.9rem;
+}
+
+.log-time {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    margin-left: 0.5rem;
+}
