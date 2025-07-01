@@ -101,6 +101,90 @@
     color: var(--text-secondary);
 }
 
+/* Members Section Modern Styles */
+.member-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--border-secondary);
+}
+.member-row:last-child {
+  border-bottom: none;
+}
+.member-row.empty {
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #222;
+}
+.member-name {
+  font-weight: 500;
+}
+.member-role {
+  margin-left: auto;
+  font-size: 0.92em;
+  color: var(--text-secondary);
+  padding-right: 8px;
+}
+.remove-btn {
+  margin-left: 1rem;
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  font-size: 0.98em;
+  transition: background 0.2s;
+}
+.remove-btn:hover {
+  background: #c0392b;
+}
+.invite-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1.1rem;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.invite-form input[type="email"] {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-secondary);
+  background: var(--background-secondary);
+  color: var(--text-primary);
+}
+.invite-form button {
+  padding: 0.5rem 1.2rem;
+  border-radius: 6px;
+  background: var(--accent-primary, #3b82f6);
+  color: var(--text-on-accent, #fff);
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+.invite-form button:hover {
+  background: var(--accent-primary-hover, #2563eb);
+}
+
 /* Sidebar Widgets */
 .group-sidebar {
     display: flex;
@@ -128,6 +212,95 @@
 .member-list li:last-child {
     border-bottom: none;
 }
+
+/* Members Tab Modern Styles */
+.members-tab {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 1.5rem 0;
+}
+.invite-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 1.1rem;
+}
+.invite-form input[type="email"] {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-secondary);
+  background: var(--background-secondary);
+  color: var(--text-primary);
+}
+.invite-form button {
+  padding: 0.5rem 1.2rem;
+  border-radius: 6px;
+  background: var(--accent-primary, #3b82f6);
+  color: var(--text-on-accent, #fff);
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+.invite-form button:hover {
+  background: var(--accent-primary-hover, #2563eb);
+}
+.member-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.member-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--border-secondary);
+}
+.member-row:last-child {
+  border-bottom: none;
+}
+.member-row.empty {
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #222;
+}
+.member-name {
+  font-weight: 500;
+}
+.member-role {
+  margin-left: auto;
+  font-size: 0.92em;
+  color: var(--text-secondary);
+  padding-right: 8px;
+}
+.remove-btn {
+  margin-left: 1rem;
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+  font-size: 0.98em;
+  transition: background 0.2s;
+}
+.remove-btn:hover {
+  background: #c0392b;
+}
+.error-message, .success-message {
+  margin-bottom: 1rem;
+  font-size: 0.98em;
+}
+.error-message { color: #e74c3c; }
+.success-message { color: #27ae60; }
 
 /* Activity Log */
 .activity-log {

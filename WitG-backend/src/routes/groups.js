@@ -6,8 +6,18 @@ const groupController = require('../controllers/groupController');
 
 router.get('/', groupController.getAllGroups);
 router.post('/', groupController.createGroup);
-router.get('/:id', groupController.getGroupById);
 router.put('/:id', groupController.updateGroup);
 router.delete('/:id', groupController.deleteGroup);
+
+// --- New endpoints ---
+// Get group details (with members and projects)
+router.get('/:id', groupController.getGroupDetails);
+// Members management
+router.post('/:id/members', groupController.addMember);
+router.delete('/:id/members/:userId', groupController.removeMember);
+// Projects management
+router.get('/:id/projects', groupController.getProjects);
+router.post('/:id/projects', groupController.createProject);
+router.delete('/:id/projects/:projectId', groupController.deleteProject);
 
 module.exports = router;

@@ -7,7 +7,7 @@ import API_BASE_URL from '../apiConfig';
 const Mates = () => {
     const [myProfile, setMyProfile] = useState(null);
     const [mates, setMates] = useState([]);
-    const [requestCode, setRequestCode] = useState('');
+    const [mateQuery, setMateQuery] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [notification, setNotification] = useState('');
@@ -48,7 +48,7 @@ const Mates = () => {
 
     const handleSendRequest = async (e) => {
         e.preventDefault();
-        if (!requestCode) return;
+        if (!mateQuery) return;
         try {
             const { data: { session } } = await supabase.auth.getSession();
             const token = session.access_token;
@@ -59,14 +59,14 @@ const Mates = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ user_code: requestCode })
+                body: JSON.stringify({ query: mateQuery })
             });
 
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || 'Failed to send request.');
 
             setNotification('Mate request sent successfully!');
-            setRequestCode('');
+            setMateQuery('');
             fetchUserData(); // Refresh data
         } catch (err) {
             setError(err.message);
@@ -127,10 +127,9 @@ const Mates = () => {
                         <form onSubmit={handleSendRequest} className="add-mate-form">
                             <input
                                 type="text"
-                                value={requestCode}
-                                onChange={(e) => setRequestCode(e.target.value)}
-                                placeholder="Enter a mate's 6-digit code"
-                                maxLength="6"
+                                value={mateQuery}
+                                onChange={(e) => setMateQuery(e.target.value)}
+                                placeholder="Enter a mate's email, username, or code"
                             />
                             <button type="submit">Send Request</button>
                         </form>

@@ -1,3 +1,4 @@
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -49,6 +50,30 @@ function App() {
         </Router>
       </ThemeProvider>
     </HelmetProvider>
+  );
+}
+
+import Chat from './Components/Chat';
+import Notifications from './Components/Notifications';
+import BoardCollabDemo from './Components/BoardCollabDemo';
+import CallVoicemailDemo from './Components/CallVoicemailDemo';
+
+function DemoChatWrapper() {
+  // TODO: Replace with actual user ID from auth context
+  const currentUserId = 'user1';
+  // For demo, fetch users from backend for CallVoicemailDemo
+  const [users, setUsers] = React.useState([]);
+  React.useEffect(() => {
+    import('./api/users').then(m => m.fetchUsers().then(setUsers));
+  }, []);
+
+  return (
+    <>
+      <Notifications currentUserId={currentUserId} />
+      <Chat currentUserId={currentUserId} />
+      <BoardCollabDemo currentUserId={currentUserId} />
+      <CallVoicemailDemo currentUserId={currentUserId} users={users} />
+    </>
   );
 }
 
