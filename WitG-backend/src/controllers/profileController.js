@@ -7,7 +7,7 @@ const getProfile = async (req, res) => {
         // Fetch profile from 'profiles' table
         const { data: profileData, error: profileError } = await supabase
             .from('profiles')
-            .select('username, full_name, avatar_url, bio')
+            .select('username, full_name, avatar_url, bio, mates, mate_requests')
             .eq('id', user.id)
             .single();
 
@@ -49,7 +49,7 @@ const updateProfile = async (req, res) => {
             .from('profiles')
             .update(updates)
             .eq('id', user.id)
-            .select('username, full_name, avatar_url, bio')
+            .select('username, full_name, avatar_url, bio, mates, mate_requests')
             .single();
 
         if (error) {

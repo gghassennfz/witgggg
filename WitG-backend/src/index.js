@@ -19,7 +19,6 @@ const taskRoutes = require('./routes/tasks');
 const mateRoutes = require('./routes/mates');
 const profileRoutes = require('./routes/profile');
 const personalAssetsRoutes = require('./routes/personalAssetsRoutes');
-const matesRoutes = require('./routes/mates');
 
 // --- App Initialization ---
 const app = express();

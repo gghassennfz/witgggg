@@ -33,7 +33,7 @@ const Mates = () => {
             const matesData = await matesRes.json();
 
             setMyProfile(profileData);
-            setMates(matesData);
+            setMates(matesData.mates || []);
             setError('');
         } catch (err) {
             setError(err.message);
@@ -100,7 +100,6 @@ const Mates = () => {
     if (loading) return <div>Loading...</div>;
 
     const acceptedMates = mates.filter(m => m.status === 'accepted');
-    const pendingMates = mates.filter(m => m.status === 'pending');
 
     return (
         <>
@@ -138,11 +137,11 @@ const Mates = () => {
                         <div className="mates-list">
                             {acceptedMates.length > 0 ? (
                                 acceptedMates.map(mate => (
-                                    <div key={mate.requestId} className="mate-card">
-                                        <img src={mate.mateInfo.avatar_url || '/default-avatar.png'} alt="avatar" className="avatar" />
+                                    <div key={mate.requestId || mate.id || mate.mateInfo?.id} className="mate-card">
+                                        <img src={mate.mateInfo?.avatar_url || mate.avatar_url || '/default-avatar.png'} alt="avatar" className="avatar" />
                                         <div className="mate-details">
-                                            <strong>{mate.mateInfo.full_name || mate.mateInfo.username}</strong>
-                                            <span>#{mate.mateInfo.user_code}</span>
+                                            <strong>{mate.mateInfo?.full_name || mate.mateInfo?.username || mate.username}</strong>
+                                            <span>#{mate.mateInfo?.user_code || mate.code}</span>
                                         </div>
                                     </div>
                                 ))
@@ -153,33 +152,108 @@ const Mates = () => {
                     </div>
 
                     <aside className="mates-sidebar">
-                        <h2>Pending Requests ({pendingMates.length})</h2>
-                        <div className="pending-list">
-                            {pendingMates.length > 0 ? (
-                                pendingMates.map(mate => (
-                                    <div key={mate.requestId} className="pending-card">
-                                        <div className="pending-info">
-                                            <strong>{mate.mateInfo.full_name || mate.mateInfo.username}</strong>
-                                            <span>wants to be your mate.</span>
-                                        </div>
-                                        {!mate.isSender && (
-                                            <div className="pending-actions">
-                                                <button onClick={() => handleUpdateRequest(mate.requestId, 'accepted')} className="accept-btn">Accept</button>
-                                                <button onClick={() => handleUpdateRequest(mate.requestId, 'declined')} className="decline-btn">Decline</button>
-                                            </div>
-                                        )}
-                                        {mate.isSender && <span className='request-sent-label'>Request Sent</span>}
-                                    </div>
-                                ))
-                            ) : (
-                                <p>No pending requests.</p>
-                            )}
-                        </div>
+                        <h2>Pending Requests</h2>
+                        <PendingRequestsSection
+                            myProfile={myProfile}
+                            fetchUserData={fetchUserData}
+                            setError={setError}
+                            setNotification={setNotification}
+                        />
                     </aside>
                 </div>
             </div>
         </>
     );
 };
+
+// --- Pending Requests Section ---
+function PendingRequestsSection({ myProfile, fetchUserData, setError, setNotification }) {
+    const [pendingReceived, setPendingReceived] = useState([]);
+    const [pendingSent, setPendingSent] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchPending = async () => {
+            try {
+                setLoading(true);
+                const { data: { session } } = await supabase.auth.getSession();
+                const token = session.access_token;
+                const res = await fetch(`${API_BASE_URL}/api/mates/requests`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed to fetch requests.');
+                setPendingReceived(data.received || []);
+                setPendingSent(data.sent || []);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchPending();
+    }, [fetchUserData, setError]);
+
+    const handleRespond = async (requestId, action) => {
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const token = session.access_token;
+            const res = await fetch(`${API_BASE_URL}/api/mates/requests/${requestId}/respond`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ action })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Failed to update request.');
+            setNotification(`Request ${action === 'accept' ? 'accepted' : 'declined'}.`);
+            fetchUserData();
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    if (loading) return <div>Loading pending requests...</div>;
+
+    return (
+        <div className="pending-list">
+            <div className="pending-section">
+                <h3>Incoming</h3>
+                {pendingReceived.length > 0 ? (
+                    pendingReceived.map(req => (
+                        <div key={req.id} className="pending-card">
+                            <div className="pending-info">
+                                <strong>{req.from?.username || req.from_user_id}</strong>
+                                <span>wants to be your mate.</span>
+                            </div>
+                            <div className="pending-actions">
+                                <button onClick={() => handleRespond(req.id, 'accept')} className="accept-btn">Accept</button>
+                                <button onClick={() => handleRespond(req.id, 'reject')} className="decline-btn">Decline</button>
+                            </div>
+                        </div>
+                    ))
+                ) : <p>No incoming requests.</p>}
+            </div>
+            <div className="pending-section">
+                <h3>Outgoing</h3>
+                {pendingSent.length > 0 ? (
+                    pendingSent.map(req => (
+                        <div key={req.id} className="pending-card">
+                            <div className="pending-info">
+                                <span>To: <strong>{req.to?.username || req.to_user_id}</strong></span>
+                                <span className='request-sent-label'>Request Sent</span>
+                            </div>
+                            <div className="pending-actions">
+                                <button onClick={() => handleRespond(req.id, 'reject')} className="decline-btn">Cancel</button>
+                            </div>
+                        </div>
+                    ))
+                ) : <p>No outgoing requests.</p>}
+            </div>
+        </div>
+    );
+}
 
 export default Mates;

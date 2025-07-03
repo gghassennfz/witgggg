@@ -31,7 +31,17 @@ CREATE TABLE IF NOT EXISTS public.group_members (
     PRIMARY KEY (group_id, user_id)
 );
 
--- 5. Create Tasks Table
+-- 5. Create Mate Requests Table
+CREATE TABLE IF NOT EXISTS public.mate_requests (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    from_user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    to_user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'declined')),
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- 6. Create Tasks Table
 CREATE TABLE IF NOT EXISTS public.tasks (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     group_id UUID REFERENCES public.groups(id) ON DELETE CASCADE,
