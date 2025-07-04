@@ -1,17 +1,17 @@
 const supabase = require("../supabaseClient")
 
-// Send a mate request to another user by their user_code
+// Send a mate request to another user by their user code
 const sendMateRequest = async (req, res) => {
-  const { user_code } = req.body // The user_code of the person to befriend
+  const { code } = req.body // The user_code of the person to befriend
   const action_user_id = req.user.id // The ID of the user sending the request
 
-  if (!user_code) {
+  if (!code) {
     return res.status(400).json({ error: "User code is required." })
   }
 
   try {
     // 1. Find the user to befriend by their code
-    const { data: recipient, error: recipientError } = await supabase.from("profiles").select("id").eq("code", user_code).single()
+    const { data: recipient, error: recipientError } = await supabase.from("profiles").select("id").eq("code", code).single()
 
     if (recipientError || !recipient) {
       return res.status(404).json({ error: "User with that code not found." })
@@ -96,8 +96,8 @@ const getMates = async (req, res) => {
                 id,
                 status,
                 action_user_id,
-                user_one:profiles!user_one_id ( id, username, full_name, avatar_url, user_code ),
-                user_two:profiles!user_two_id ( id, username, full_name, avatar_url, user_code )
+                user_one:profiles!user_one_id ( id, username, full_name, avatar_url, code ),
+                user_two:profiles!user_two_id ( id, username, full_name, avatar_url, code )
             `
       )
       .or(`user_one_id.eq.${userId},user_two_id.eq.${userId}`)
@@ -120,11 +120,11 @@ const getMates = async (req, res) => {
   }
 }
 
-// Get the current user's profile, including their user_code
+// Get the current user's profile, including their user code
 const getMyProfile = async (req, res) => {
   const userId = req.user.id
   try {
-    const { data, error } = await supabase.from("profiles").select("id, username, full_name, avatar_url, user_code").eq("id", userId).single()
+    const { data, error } = await supabase.from("profiles").select("id, username, full_name, avatar_url, code").eq("id", userId).single()
 
     if (error) throw error
 

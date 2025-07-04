@@ -9,7 +9,8 @@ exports.sendMateRequest = async (req, res) => {
   }
   try {
     // Find user by email, username, or code (case-insensitive)
-    const { data: toUser, error: userError } = await supabase.from("profiles").select("id, mate_requests").or(`email.ilike.${query},username.ilike.${query},user_code.eq.${query}`).single()
+    const { data: toUser, error: userError } = await supabase.from("profiles").select("id, mate_requests").or(`email.ilike.${query},username.ilike.${query},code.eq.${query}`).single()
+
     if (userError || !toUser) return res.status(404).json({ error: "User not found" })
     if (toUser.id === fromUserId) return res.status(400).json({ error: "Cannot add yourself" })
     // Fetch sender profile

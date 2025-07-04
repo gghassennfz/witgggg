@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef, useCallback } from "react"
 import { Helmet } from "react-helmet-async"
 import { supabase } from "../supabaseClient"
 import "./Mates.css"
@@ -7,12 +7,12 @@ import API_BASE_URL from "../apiConfig"
 const Mates = () => {
   const [myProfile, setMyProfile] = useState(null)
   const [mates, setMates] = useState([])
-  const [mateQuery, setMateQuery] = useState("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [notification, setNotification] = useState("")
+  const searchRef = useRef(null)
 
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     try {
       setLoading(true)
       const {
@@ -39,14 +39,17 @@ const Mates = () => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     fetchUserData()
-  }, [])
+  }, [fetchUserData])
 
   const handleSendRequest = async e => {
     e.preventDefault()
+    const formData = new FormData(searchRef.current)
+    const mateQuery = formData.get("search").toLowerCase().trim()
+
     if (!mateQuery) return
     try {
       const {
@@ -67,7 +70,7 @@ const Mates = () => {
       if (!res.ok) throw new Error(data.error || "Failed to send request.")
 
       setNotification("Mate request sent successfully!")
-      setMateQuery("")
+      searchRef.current.reset()
       fetchUserData() // Refresh data
     } catch (err) {
       setError(err.message)
@@ -124,8 +127,8 @@ const Mates = () => {
         <div className="mates-content">
           <div className="mates-main">
             <h2>Add a Mate</h2>
-            <form onSubmit={handleSendRequest} className="add-mate-form">
-              <input type="text" value={mateQuery} onChange={e => setMateQuery(e.target.value)} placeholder="Enter a mate's email, username, or code" />
+            <form onSubmit={handleSendRequest} className="add-mate-form" ref={searchRef}>
+              <input type="text" name="search" id="search" placeholder="Enter a mate's email, username, or code" />
               <button type="submit">Send Request</button>
             </form>
 
@@ -137,7 +140,7 @@ const Mates = () => {
                     <img src={mate.mateInfo?.avatar_url || mate.avatar_url || "/default-avatar.png"} alt="avatar" className="avatar" />
                     <div className="mate-details">
                       <strong>{mate.mateInfo?.full_name || mate.mateInfo?.username || mate.username}</strong>
-                      <span>#{mate.mateInfo?.user_code || mate.code}</span>
+                      <span>#{mate.mateInfo?.code || mate.code}</span>
                     </div>
                   </div>
                 ))
