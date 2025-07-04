@@ -49,18 +49,23 @@ exports.sendMateRequest = async (req, res) => {
 // List all accepted mates for current user
 exports.getMates = async (req, res) => {
   const userId = req.user.id
+
   try {
-    const { data: me, error } = await supabase.from("profiles").select("mates").eq("id", userId).single()
+    // Step 1: Get mate IDs from the 'mates' table
+    const { data: mateLinks, error: matesError } = await supabase.from("mates").select("mate_id").eq("user_id", userId)
 
-    if (error || !me) throw error
-    // Fetch mate profiles
+    if (matesError) throw matesError
 
+    const mateIds = mateLinks.map(link => link.mate_id)
+
+    // Step 2: Get full mate profile details
     let mates = []
-    if (me.mates && me.mates.length > 0) {
-      const { data: mateProfiles, error: matesErr } = await supabase.from("profiles").select("id, username, email, avatar_url, code").in("id", me.mates)
+    if (mateIds.length > 0) {
+      const { data: mateProfiles, error: profilesError } = await supabase.from("profiles").select("id, username, email, avatar_url, code").in("id", mateIds)
 
-      if (matesErr) throw matesErr
-      mates = mateProfiles || []
+      if (profilesError) throw profilesError
+
+      mates = mateProfiles
     }
 
     res.json({ mates })
@@ -135,7 +140,7 @@ exports.respondToMateRequest = async (req, res) => {
     }
 
     // Update the request's status
-    const newStatus = action === "accept" ? "accepted" : "declined"
+    const newStatus = action === "accept" ? "accepted" : "rejected"
 
     const { error: updateError } = await supabase.from("mate_requests").update({ status: newStatus }).eq("id", requestId)
 
@@ -143,13 +148,21 @@ exports.respondToMateRequest = async (req, res) => {
 
     // If accepted, add both users to each other’s mates (in a join table or field)
     if (newStatus === "accepted") {
-      // Update mates table (assuming a join table `mates` exists)
-      const { error: insertError } = await supabase.from("mates").insert([
-        { user_id: userId, mate_id: request.sender_id },
-        { user_id: request.sender_id, mate_id: userId }
-      ])
+      // Check if the mate relationship already exists
+      const { data: existingMates, error: checkError } = await supabase.from("mates").select("user_id, mate_id").or(`and(user_id.eq.${userId},mate_id.eq.${request.sender_id}),and(user_id.eq.${request.sender_id},mate_id.eq.${userId})`)
 
-      if (insertError) throw insertError
+      if (checkError) throw checkError
+
+      const alreadyConnected = existingMates && existingMates.length === 2
+
+      if (!alreadyConnected) {
+        const { error: insertError } = await supabase.from("mates").insert([
+          { user_id: userId, mate_id: request.sender_id },
+          { user_id: request.sender_id, mate_id: userId }
+        ])
+
+        if (insertError) throw insertError
+      }
     }
 
     res.json({ success: true })

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { Helmet } from "react-helmet-async"
 import { supabase } from "../supabaseClient"
 import "./Mates.css"
@@ -137,7 +137,7 @@ const Mates = () => {
               {mates.length > 0 ? (
                 mates.map(mate => (
                   <div key={mate.requestId || mate.id || mate.mateInfo?.id} className="mate-card">
-                    <img src={mate.mateInfo?.avatar_url || mate.avatar_url || "/default-avatar.png"} alt="avatar" className="avatar" />
+                    <img src={mate.mateInfo?.avatar_url || mate.avatar_url || "https://i.pravatar.cc/40"} alt="avatar" className="avatar" />
                     <div className="mate-details">
                       <strong>{mate.mateInfo?.full_name || mate.mateInfo?.username || mate.username}</strong>
                       <span>#{mate.mateInfo?.code || mate.code}</span>
@@ -161,7 +161,7 @@ const Mates = () => {
 }
 
 // --- Pending Requests Section ---
-function PendingRequestsSection({ myProfile, fetchUserData, setError, setNotification }) {
+function PendingRequestsSection({ fetchUserData, setError, setNotification }) {
   const [pendingRequests, setPendingRequests] = useState({
     received: [],
     sent: []
@@ -246,7 +246,7 @@ function PendingRequestsSection({ myProfile, fetchUserData, setError, setNotific
           pendingRequests.received.map(req => (
             <div key={req.sender} className="pending-card">
               <div className="pending-info">
-                <strong>{req.from?.username || req.from_user_id}</strong>
+                <strong>{req.sender?.username || req.from_user_id}</strong>
                 <span>wants to be your mate.</span>
               </div>
               <div className="pending-actions">
@@ -266,24 +266,21 @@ function PendingRequestsSection({ myProfile, fetchUserData, setError, setNotific
       <div className="pending-section">
         <h3>Outgoing</h3>
         {pendingRequests.sent.length > 0 ? (
-          pendingRequests.sent.map(req => {
-            console.log(req)
-            return (
-              <div key={req.receiver} className="pending-card">
-                <div className="pending-info">
-                  <span>
-                    To: <strong>{req.receiver?.username || req.to_user_id}</strong>
-                  </span>
-                  <span className="request-sent-label">Request Sent</span>
-                </div>
-                <div className="pending-actions">
-                  <button onClick={() => handleCancel(req.id)} className="decline-btn">
-                    Cancel
-                  </button>
-                </div>
+          pendingRequests.sent.map(req => (
+            <div key={req.receiver} className="pending-card">
+              <div className="pending-info">
+                <span>
+                  To: <strong>{req.receiver?.username || req.to_user_id}</strong>
+                </span>
+                <span className="request-sent-label">Request Sent</span>
               </div>
-            )
-          })
+              <div className="pending-actions">
+                <button onClick={() => handleCancel(req.id)} className="decline-btn">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ))
         ) : (
           <p>No outgoing requests.</p>
         )}

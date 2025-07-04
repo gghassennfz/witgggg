@@ -5,7 +5,7 @@ const getProfile = async (req, res) => {
 
   try {
     // Fetch profile from 'profiles' table
-    const { data: profileData, error: profileError } = await supabase.from("profiles").select("username, full_name, avatar_url, bio, mates, mate_requests").eq("id", user.id).single()
+    const { data: profileData, error: profileError } = await supabase.from("profiles").select("username, full_name, avatar_url, bio").eq("id", user.id).single()
 
     if (profileError) {
       if (profileError.code === "PGRST116") {
@@ -41,7 +41,7 @@ const updateProfile = async (req, res) => {
   updates.updated_at = new Date()
 
   try {
-    const { data, error } = await supabase.from("profiles").update(updates).eq("id", user.id).select("username, full_name, avatar_url, bio, mates").single()
+    const { data, error } = await supabase.from("profiles").update(updates).eq("id", user.id).select("username, full_name, avatar_url, bio").single()
 
     if (error) {
       if (error.code === "23505") {
