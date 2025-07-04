@@ -1,0 +1,70 @@
+/* Calendar modal override: ensure all modal text, labels, and controls are black and readable on white bg */
+.calendar-modal-bg {
+  background: rgba(0,0,0,0.3);
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.calendar-modal {
+  background: #fff;
+  color: #111;
+  border-radius: 10px;
+  padding: 2rem 2.5rem 1.5rem 2.5rem;
+  box-shadow: 0 2px 24px 0 rgba(0,0,0,0.09);
+  min-width: 320px;
+  max-width: 95vw;
+}
+.calendar-modal h3,
+.calendar-modal label,
+.calendar-modal input,
+.calendar-modal select,
+.calendar-modal option,
+.calendar-modal button {
+  color: #111 !important;
+  font-size: 1rem;
+  font-family: inherit;
+}
+.calendar-modal label {
+  display: block;
+  margin: 1rem 0 0.25rem 0;
+  font-weight: 600;
+}
+.calendar-modal input,
+.calendar-modal select {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  background: #fff;
+  color: #111 !important;
+}
+.calendar-modal input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  filter: invert(0);
+}
+.calendar-modal button {
+  background: #e0e7ef;
+  border: none;
+  border-radius: 5px;
+  padding: 0.5rem 1.2rem;
+  margin-right: 0.5rem;
+  color: #111 !important;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.calendar-modal button[type="submit"] {
+  background: #007bff;
+  color: #fff !important;
+}
+.calendar-modal button[type="button"]:not([style*="background: #ff4d4f"]) {
+  background: #e0e7ef;
+  color: #111 !important;
+}
+.calendar-modal button[type="button"][style*="background: #ff4d4f"] {
+  background: #ff4d4f !important;
+  color: #fff !important;
+}

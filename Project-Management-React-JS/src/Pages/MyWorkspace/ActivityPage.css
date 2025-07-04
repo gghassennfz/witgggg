@@ -1,0 +1,32 @@
+.activity-page {
+  max-width: 600px;
+  margin: 0 auto;
+}
+.activity-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.activity-item {
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.activity-item:last-child {
+  border-bottom: none;
+}
+.activity-time {
+  color: #888;
+  font-size: 0.92rem;
+  min-width: 90px;
+}
+.activity-desc {
+  flex: 1;
+}
+.no-activity {
+  color: #888;
+  text-align: center;
+  margin: 24px 0;
+}

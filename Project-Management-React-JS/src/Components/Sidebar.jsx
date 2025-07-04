@@ -14,7 +14,7 @@ const Sidebar = () => {
           <i className="uil uil-estate"></i>
           <span>Dashboard</span>
         </NavLink>
-        <NavLink to="/workspace" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+        <NavLink to="/myworkspace" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
           <i className="uil uil-folder"></i>
           <span>My Workspace</span>
         </NavLink>

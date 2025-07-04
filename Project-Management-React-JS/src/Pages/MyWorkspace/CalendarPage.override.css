@@ -1,0 +1,49 @@
+/* Override react-big-calendar to make all text black for readability */
+.rbc-calendar,
+.rbc-calendar * {
+  color: #111 !important;
+}
+
+.rbc-toolbar button,
+.rbc-toolbar span,
+.rbc-toolbar label,
+.rbc-toolbar,
+.rbc-header,
+.rbc-header span,
+.rbc-date-cell,
+.rbc-event,
+.rbc-agenda-view,
+.rbc-agenda-view th,
+.rbc-agenda-view td,
+.rbc-agenda-time-cell,
+.rbc-agenda-date-cell {
+  color: #111 !important;
+}
+
+/* For buttons, labels, and navigation */
+.rbc-toolbar button {
+  background: #fff !important;
+  color: #111 !important;
+  border: 1px solid #eee;
+}
+
+.rbc-toolbar button.rbc-active {
+  background: #e0e7ef !important;
+  color: #111 !important;
+}
+
+/* For the calendar grid numbers and days */
+.rbc-month-view .rbc-date-cell {
+  color: #111 !important;
+}
+
+/* For event text */
+.rbc-event-content {
+  color: #111 !important;
+}
+
+/* For agenda view */
+.rbc-agenda-view th,
+.rbc-agenda-view td {
+  color: #111 !important;
+}

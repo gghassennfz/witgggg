@@ -16,6 +16,7 @@ import Group from "./Pages/Group";
 import Mates from "./Pages/Mates";
 import CreateGroup from "./Pages/CreateGroup";
 import PersonalWorkspace from "./Pages/PersonalWorkspace";
+import MyWorkspace from "./Pages/MyWorkspace";
 
 function App() {
   return (
@@ -33,7 +34,8 @@ function App() {
                 <Route path="group/:groupId" element={<Group />} />
                 <Route path="mates" element={<Mates />} />
                 <Route path="settings" element={<Settings />} />
-                <Route path="workspace" element={<PersonalWorkspace />} />
+                <Route path="personalworkspace/*" element={<MyWorkspace />} />
+                <Route path="myworkspace/*" element={<MyWorkspace />} />
               </Route>
             </Route>
 
