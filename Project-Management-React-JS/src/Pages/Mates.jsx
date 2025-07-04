@@ -244,7 +244,7 @@ function PendingRequestsSection({ fetchUserData, setError, setNotification }) {
         <h3>Incoming</h3>
         {pendingRequests.received.length > 0 ? (
           pendingRequests.received.map(req => (
-            <div key={req.sender} className="pending-card">
+            <div key={req.sender.id} className="pending-card">
               <div className="pending-info">
                 <strong>{req.sender?.username || req.from_user_id}</strong>
                 <span>wants to be your mate.</span>
@@ -267,7 +267,7 @@ function PendingRequestsSection({ fetchUserData, setError, setNotification }) {
         <h3>Outgoing</h3>
         {pendingRequests.sent.length > 0 ? (
           pendingRequests.sent.map(req => (
-            <div key={req.receiver} className="pending-card">
+            <div key={req.receiver.id} className="pending-card">
               <div className="pending-info">
                 <span>
                   To: <strong>{req.receiver?.username || req.to_user_id}</strong>

@@ -17,7 +17,7 @@ exports.sendMateRequest = async (req, res) => {
     if (toUser.id === fromUserId) return res.status(400).json({ error: "Cannot add yourself" })
 
     // Check if a pending request already exists between these users in either direction
-    const { data: existingRequests, error: requestError } = await supabase.from("mate_requests").select("*").or(`sender_id.eq.${fromUserId},receiver_id.eq.${toUser.id}, sender_id.eq.${toUser.id},receiver_id.eq.${fromUserId}`).eq("status", "pending")
+    const { data: existingRequests, error: requestError } = await supabase.from("mate_requests").select("*").or(`and(sender_id.eq.${fromUserId},receiver_id.eq.${toUser.id}),and(sender_id.eq.${toUser.id},receiver_id.eq.${fromUserId})`).eq("status", "pending")
 
     if (requestError) throw requestError
 
