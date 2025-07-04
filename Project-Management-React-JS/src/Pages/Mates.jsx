@@ -162,8 +162,10 @@ const Mates = () => {
 
 // --- Pending Requests Section ---
 function PendingRequestsSection({ myProfile, fetchUserData, setError, setNotification }) {
-  const [pendingReceived, setPendingReceived] = useState([])
-  const [pendingSent, setPendingSent] = useState([])
+  const [pendingRequests, setPendingRequests] = useState({
+    received: [],
+    sent: []
+  })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -179,8 +181,7 @@ function PendingRequestsSection({ myProfile, fetchUserData, setError, setNotific
         })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || "Failed to fetch requests.")
-        setPendingReceived(data.received || [])
-        setPendingSent(data.sent || [])
+        setPendingRequests({ received: data.received || [], sent: data.sent || [] })
       } catch (err) {
         setError(err.message)
       } finally {
@@ -213,14 +214,36 @@ function PendingRequestsSection({ myProfile, fetchUserData, setError, setNotific
     }
   }
 
+  const handleCancel = async requestId => {
+    try {
+      const {
+        data: { session }
+      } = await supabase.auth.getSession()
+      const token = session.access_token
+      const res = await fetch(`${API_BASE_URL}/api/mates/requests/${requestId}/cancel`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        }
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to update request.")
+      setNotification(`Request cancelled`)
+      fetchUserData()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   if (loading) return <div>Loading pending requests...</div>
 
   return (
     <div className="pending-list">
       <div className="pending-section">
         <h3>Incoming</h3>
-        {pendingReceived.length > 0 ? (
-          pendingReceived.map(req => (
+        {pendingRequests.received.length > 0 ? (
+          pendingRequests.received.map(req => (
             <div key={req.sender} className="pending-card">
               <div className="pending-info">
                 <strong>{req.from?.username || req.from_user_id}</strong>
@@ -242,22 +265,25 @@ function PendingRequestsSection({ myProfile, fetchUserData, setError, setNotific
       </div>
       <div className="pending-section">
         <h3>Outgoing</h3>
-        {pendingSent.length > 0 ? (
-          pendingSent.map(req => (
-            <div key={req.receiver} className="pending-card">
-              <div className="pending-info">
-                <span>
-                  To: <strong>{req.to?.username || req.to_user_id}</strong>
-                </span>
-                <span className="request-sent-label">Request Sent</span>
+        {pendingRequests.sent.length > 0 ? (
+          pendingRequests.sent.map(req => {
+            console.log(req)
+            return (
+              <div key={req.receiver} className="pending-card">
+                <div className="pending-info">
+                  <span>
+                    To: <strong>{req.receiver?.username || req.to_user_id}</strong>
+                  </span>
+                  <span className="request-sent-label">Request Sent</span>
+                </div>
+                <div className="pending-actions">
+                  <button onClick={() => handleCancel(req.id)} className="decline-btn">
+                    Cancel
+                  </button>
+                </div>
               </div>
-              <div className="pending-actions">
-                <button onClick={() => handleRespond(`${req.sender}_${req.receiver}_${req.created_at}`, "reject")} className="decline-btn">
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ))
+            )
+          })
         ) : (
           <p>No outgoing requests.</p>
         )}
