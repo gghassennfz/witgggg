@@ -249,7 +249,7 @@ function PendingRequestsSection({ myProfile, fetchUserData, setError, setNotific
                 <span className="request-sent-label">Request Sent</span>
               </div>
               <div className="pending-actions">
-                <button onClick={() => handleRespond(req.id, "reject")} className="decline-btn">
+                <button onClick={() => handleRespond(`${req.sender}_${req.receiver}_${req.created_at}`, "reject")} className="decline-btn">
                   Cancel
                 </button>
               </div>

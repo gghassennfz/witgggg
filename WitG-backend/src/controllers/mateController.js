@@ -78,6 +78,7 @@ exports.respondToMateRequest = async (req, res) => {
   const userId = req.user.id
   const { requestId } = req.params // requestId will be a composite key: sender_receiver_createdAt
   const { action } = req.body // 'accept' or 'reject'
+
   if (!["accept", "reject"].includes(action)) return res.status(400).json({ error: "Invalid action" })
   try {
     // Get own profile
