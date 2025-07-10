@@ -8,6 +8,7 @@ import './CreateGroup.css'; // Import the new dedicated CSS file
 const CreateGroup = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [isPrivate, setIsPrivate] = useState(false); // New state
 
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ const CreateGroup = () => {
         setLoading(false);
         return;
       }
-      let insertData = { name, description, created_by: user.id };
+      let insertData = { name, description, created_by: user.id, is_private: isPrivate };
       let newGroup, error;
       try {
         ({ data: newGroup, error } = await supabase
@@ -92,6 +93,21 @@ const CreateGroup = () => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
+          </div>
+
+          <div className="form-group">
+            <label style={{display:'flex',alignItems:'center',gap:'8px'}}>
+              <input
+                type="checkbox"
+                checked={isPrivate}
+                onChange={e => setIsPrivate(e.target.checked)}
+                style={{marginRight:8}}
+              />
+              Private Group (Personal Workspace)
+            </label>
+            <div style={{fontSize:'0.93em',color:'#888',marginTop:4}}>
+              Only you can access a private group. For teams, leave this unchecked.
+            </div>
           </div>
 
           <button type="submit" className="create-group-button" disabled={loading}>

@@ -12,7 +12,7 @@ function getNowTime() {
   return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-export default function MyWorkspace() {
+export default function MyWorkspace({ groupId }) {
   const [userId, setUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -24,19 +24,26 @@ export default function MyWorkspace() {
   // Fetch workspace on mount
   useEffect(() => {
     let ignore = false;
-    async function fetchUserAndWorkspace() {
+    async function fetchWorkspace() {
       setLoading(true);
       setError(null);
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session?.user?.id) throw new Error('Not authenticated');
-        setUserId(session.user.id);
+        let key = groupId;
+        let isGroup = !!groupId;
+        if (!key) {
+          // fallback to user workspace
+          const { data: { session } } = await supabase.auth.getSession();
+          if (!session?.user?.id) throw new Error('Not authenticated');
+          key = session.user.id;
+          setUserId(session.user.id);
+          isGroup = false;
+        }
         let workspace;
         try {
-          workspace = await getWorkspace(session.user.id);
+          workspace = await getWorkspace(key, isGroup);
         } catch (err) {
           if (err.code === 'PGRST116' || err.message.includes('No rows')) {
-            workspace = await createWorkspace(session.user.id);
+            workspace = await createWorkspace(key, isGroup);
           } else {
             throw err;
           }
@@ -53,24 +60,26 @@ export default function MyWorkspace() {
         if (!ignore) setLoading(false);
       }
     }
-    fetchUserAndWorkspace();
+    fetchWorkspace();
     return () => { ignore = true; };
-  }, []);
+  }, [groupId]);
 
   // Update workspace in Supabase when any state changes (after initial load)
   useEffect(() => {
-    if (!userId || loading) return;
+    const key = groupId || userId;
+    const isGroup = !!groupId;
+    if (!key || loading) return;
     // Debounce updates
     const timeout = setTimeout(() => {
-      updateWorkspace(userId, {
+      updateWorkspace(key, {
         tasks,
         activity,
         calendar_events: calendarEvents,
         files
-      }).catch(e => console.error('Workspace update error:', e));
+      }, isGroup).catch(e => console.error('Workspace update error:', e));
     }, 400);
     return () => clearTimeout(timeout);
-  }, [tasks, activity, calendarEvents, files, userId, loading]);
+  }, [tasks, activity, calendarEvents, files, groupId, userId, loading]);
 
   // Log an activity event
   const logActivity = useCallback((desc, type = 'info') => {

@@ -119,6 +119,46 @@ const Group = () => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('Members');
 
+  // --- Mates state for inviting friends ---
+  const [mates, setMates] = useState([]); // All mates (friends)
+  const [eligibleInvitees, setEligibleInvitees] = useState([]); // Mates not in group
+
+  // Fetch mates (friends) and filter eligible invitees
+  const fetchMates = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+      const token = session.access_token;
+      // Fetch mates from backend
+      const res = await fetch(`${API_BASE_URL}/api/mates`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch mates');
+      const matesData = await res.json();
+      setMates(matesData.mates || []);
+      // Filter mates not in group
+      if (members && matesData.mates) {
+        const memberIds = new Set(members.map(m => m.user?.id || m.user_id));
+        const eligible = matesData.mates.filter(mate => {
+          const mateId = mate.mateInfo?.id || mate.id;
+          return !memberIds.has(mateId);
+        });
+        setEligibleInvitees(eligible);
+      } else {
+        setEligibleInvitees([]);
+      }
+    } catch (err) {
+      // Optionally handle error
+      setMates([]);
+      setEligibleInvitees([]);
+    }
+  }, [members]);
+
+  // Fetch mates whenever members change (to update eligible invitees)
+  useEffect(() => {
+    fetchMates();
+  }, [fetchMates]);
+
   // Fetch group details, members, and projects
   const fetchGroupDetails = useCallback(async () => {
     setLoading(true);
@@ -231,25 +271,45 @@ const Group = () => {
 
   // --- UI for each tab ---
   function MembersTab() {
-    const [inviteEmail, setInviteEmail] = useState('');
-    return (
-      <div>
-        <h2>Members</h2>
-        <ul className="member-list">
-          {members.map(m => (
-            <li key={m.user?.id || m.user_id}>
-              {m.user?.username || m.user_id} ({m.role})
-              <button onClick={() => handleRemoveMember(m.user?.id || m.user_id)} style={{marginLeft:8}}>Remove</button>
-            </li>
-          ))}
-        </ul>
-        <form onSubmit={e => { e.preventDefault(); handleInvite(inviteEmail); setInviteEmail(''); }} style={{ marginTop: 16 }}>
-          <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="Invite by email..." required />
-          <button type="submit">Invite</button>
-        </form>
+  const [inviteEmail, setInviteEmail] = useState('');
+  return (
+    <div>
+      <h2>Members</h2>
+      <ul className="member-list">
+        {members.map(m => (
+          <li key={m.user?.id || m.user_id}>
+            {m.user?.username || m.user_id} ({m.role})
+            <button onClick={() => handleRemoveMember(m.user?.id || m.user_id)} style={{marginLeft:8}}>Remove</button>
+          </li>
+        ))}
+      </ul>
+
+      {/* --- New: Invite mates who are not in the group --- */}
+      <div style={{ marginTop: 24 }}>
+        <h3>Invite a Mate</h3>
+        {eligibleInvitees.length > 0 ? (
+          <ul className="invite-list">
+            {eligibleInvitees.map(mate => (
+              <li key={mate.mateInfo?.id || mate.id}>
+                <span>{mate.mateInfo?.username || mate.username} (#{mate.mateInfo?.code || mate.code})</span>
+                <button style={{marginLeft:8}} onClick={() => handleInvite(mate.mateInfo?.email || mate.email)}>Invite</button>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No mates available to invite.</p>
+        )}
       </div>
-    );
-  }
+
+      {/* Fallback: old invite by email */}
+      <form onSubmit={e => { e.preventDefault(); handleInvite(inviteEmail); setInviteEmail(''); }} style={{ marginTop: 16 }}>
+        <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="Invite by email..." required />
+        <button type="submit">Invite</button>
+      </form>
+    </div>
+  );
+}
+
 
   function ProjectsTab() {
     const [name, setName] = useState('');
@@ -315,12 +375,18 @@ const Group = () => {
 
   const tabs = ['Members', 'Projects', 'Chat'];
 
+  if (!group) return <div>Loading...</div>;
+  if (group.is_private) {
+    return <MyWorkspace groupId={group.id} />;
+  }
   return (
-    <div className="group-details-page">
+    <div className="myworkspace-container group-details-page">
       <Helmet><title>Group: {group.name}</title></Helmet>
-      <h1>{group.name}</h1>
-      <TabNav tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
-      <div className="tab-content">
+      <div className="myworkspace-navbar group-navbar">
+        <h1 style={{ fontSize: '2rem', margin: 0, flex: 1 }}>{group.name}</h1>
+        <TabNav tabs={tabs} activeTab={activeTab} setActiveTab={setActiveTab} />
+      </div>
+      <div className="myworkspace-content group-content">
         {activeTab === 'Members' && <MembersTab />}
         {activeTab === 'Projects' && <ProjectsTab />}
         {activeTab === 'Chat' && <ChatTab />}
