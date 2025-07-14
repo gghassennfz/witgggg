@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { Helmet } from 'react-helmet-async';
 import './Group.css';
+import '../Components/GroupCallModal.css';
+import GroupCallModal from '../Components/GroupCallModal';
 import API_BASE_URL from '../apiConfig';
 import socket from '../socket';
 
@@ -379,7 +381,7 @@ const Group = () => {
     return (
       <div>
         <h2>Group Chat</h2>
-        <GroupChat groupId={groupId} currentUserId={chatUser?.id} />
+        <GroupChat groupId={groupId} currentUserId={chatUser?.id} members={members} />
       </div>
     );
   }
@@ -437,7 +439,7 @@ const Group = () => {
 };
 
 // --- Group Chat Component ---
-function GroupChat({ groupId, currentUserId }) {
+function GroupChat({ groupId, currentUserId, members }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [file, setFile] = useState(null);
@@ -480,33 +482,116 @@ function GroupChat({ groupId, currentUserId }) {
     setInput('');
   };
 
+  // Helper: Get sender info from members array
+  const getSenderInfo = (userId) => {
+    const member = (Array.isArray(members) ? members : []).find(m => m.user?.id === userId || m.user_id === userId);
+    return {
+      username: member?.user?.username || member?.user_id || 'Unknown',
+      avatar: member?.user?.avatar_url || '/default-avatar.png',
+    };
+  };
+
+  // Call modal state
+  const [callModal, setCallModal] = useState({ open: false, targetUser: null, video: false });
+  // List of other group members (not self)
+  const otherMembers = (Array.isArray(members) ? members : []).filter(m => (m.user?.id || m.user_id) !== currentUserId);
+  // Helper: Get sender info from members array (already defined)
+
   return (
-    <div className="group-chat">
-      <div className="chat-messages">
-        {messages.map((msg, i) => (
-          <div key={i} className="chat-msg">
-            <b>{msg.userId}</b>: {msg.text}
-            {msg.file && (
-              <div><a href={msg.file.data} download={msg.file.name}>File: {msg.file.name}</a></div>
-            )}
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
+    <>
+      <div className="group-chat" style={{ maxWidth: 700, margin: '0 auto', background: '#fff', borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', padding: 0 }}>
+        <div className="chat-messages" style={{ maxHeight: 400, overflowY: 'auto', padding: '24px 18px 12px 18px', background: '#f8fafd', borderRadius: '12px 12px 0 0' }}>
+          {messages.map((msg, i) => {
+            const sender = getSenderInfo(msg.userId);
+            const isImage = msg.file && msg.file.data && msg.file.data.startsWith('data:image');
+            return (
+              <div
+                key={i}
+                className="chat-msg"
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  marginBottom: 18,
+                  flexDirection: msg.userId === currentUserId ? 'row-reverse' : 'row',
+                  gap: 12,
+                }}
+              >
+                <img
+                  src={sender.avatar}
+                  alt={sender.username}
+                  style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '1px solid #bbb', background: '#eee' }}
+                />
+                <div style={{ maxWidth: '80%' }}>
+                  <div style={{ fontWeight: 500, color: '#222', fontSize: 15 }}>{sender.username}</div>
+                  <div
+                    style={{
+                      background: msg.userId === currentUserId ? '#d1f7c4' : '#e6eefa',
+                      borderRadius: 8,
+                      padding: '8px 12px',
+                      margin: '6px 0',
+                      wordBreak: 'break-word',
+                      color: '#222',
+                      fontSize: 15,
+                    }}
+                  >
+                    {msg.text && <span>{msg.text}</span>}
+                    {msg.file && (
+                      isImage ? (
+                        <div style={{ marginTop: 8 }}>
+                          <img src={msg.file.data} alt={msg.file.name} style={{ maxWidth: 180, maxHeight: 140, borderRadius: 6, border: '1px solid #eee', display: 'block' }} />
+                          <a href={msg.file.data} download={msg.file.name} style={{ fontSize: 13, color: '#007bff', display: 'block', marginTop: 4 }}>Download Image</a>
+                        </div>
+                      ) : (
+                        <div style={{ marginTop: 8 }}>
+                          <a href={msg.file.data} download={msg.file.name} style={{ fontSize: 14, color: '#007bff' }}>File: {msg.file.name}</a>
+                        </div>
+                      )
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : ''}</div>
+                </div>
+              </div>
+            );
+          })}
+          <div ref={messagesEndRef} />
+        </div>
+        <form className="chat-input-form" onSubmit={sendMessage} style={{ display: 'flex', gap: 10, padding: '16px 18px', borderTop: '1px solid #f0f0f0', background: '#f8fafd', borderRadius: '0 0 12px 12px' }}>
+          <input
+            type="text"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            placeholder="Type a message..."
+            style={{ flex: 1, padding: '10px 14px', borderRadius: 8, border: '1px solid #ddd', fontSize: 15 }}
+          />
+          <input
+            type="file"
+            onChange={e => setFile(e.target.files[0])}
+            style={{ width: 120 }}
+          />
+          <button type="submit" style={{ background: '#007bff', color: '#fff', border: 'none', borderRadius: 8, padding: '0 18px', fontWeight: 500, fontSize: 15 }}>Send</button>
+        </form>
+        {/* Call buttons for each member */}
+        <div style={{ display: 'flex', gap: 10, margin: '18px 0 0 0', flexWrap: 'wrap', alignItems: 'center' }}>
+          {otherMembers.map(m => (
+            <div key={m.user?.id || m.user_id} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <img src={m.user?.avatar_url || '/default-avatar.png'} alt={m.user?.username || m.user_id} style={{ width: 30, height: 30, borderRadius: '50%', border: '1px solid #bbb' }} />
+              <span style={{ color: '#222', fontWeight: 500 }}>{m.user?.username || m.user_id}</span>
+              <button onClick={() => setCallModal({ open: true, targetUser: m.user?.id || m.user_id, video: false })} style={{ background: '#27ae60', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', marginLeft: 4, fontSize: 14, cursor: 'pointer' }}>Call</button>
+              <button onClick={() => setCallModal({ open: true, targetUser: m.user?.id || m.user_id, video: true })} style={{ background: '#007bff', color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', marginLeft: 4, fontSize: 14, cursor: 'pointer' }}>Video</button>
+            </div>
+          ))}
+        </div>
       </div>
-      <form className="chat-input-form" onSubmit={sendMessage}>
-        <input
-          type="text"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder="Type a message..."
-        />
-        <input
-          type="file"
-          onChange={e => setFile(e.target.files[0])}
-        />
-        <button type="submit">Send</button>
-      </form>
-    </div>
+      {/* Call Modal */}
+      <GroupCallModal
+        isOpen={callModal.open}
+        onClose={() => setCallModal({ open: false, targetUser: null, video: false })}
+        targetUser={callModal.targetUser}
+        currentUserId={currentUserId}
+        video={callModal.video}
+        groupId={groupId}
+      />
+    </>
   );
 }
 
