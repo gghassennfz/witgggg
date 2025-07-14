@@ -46,8 +46,11 @@ const Groups = () => {
         <title>My Groups - WitG</title>
       </Helmet>
 
-      <header className="page-header">
-        <h1>My Groups</h1>
+      <header className="page-header" style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+        <h1 style={{ marginRight: 'auto' }}>My Groups</h1>
+        <Link to="/group/requests" className="btn btn-secondary" style={{ background: '#f1f5fa', color: '#007bff', border: '1px solid #cce2ff', padding: '8px 16px', borderRadius: '6px', fontWeight: 500, marginRight: 8 }}>
+          See Join Requests
+        </Link>
         <Link to="/group/create" className="btn btn-primary">
           + Create New Group
         </Link>
