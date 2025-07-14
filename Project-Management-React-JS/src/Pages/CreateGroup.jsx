@@ -36,7 +36,13 @@ const CreateGroup = () => {
         setLoading(false);
         return;
       }
-      let insertData = { name, description, created_by: user.id, is_private: isPrivate };
+      let insertData = {
+        name,
+        description,
+        created_by: user.id,
+        is_private: isPrivate,
+        members: [{ user_id: user.id, status: 'accepted' }], // Add creator as accepted member
+      };
       let newGroup, error;
       try {
         ({ data: newGroup, error } = await supabase
@@ -48,10 +54,6 @@ const CreateGroup = () => {
         error = err;
       }
       if (error) throw error;
-      const { error: memberError } = await supabase
-        .from('group_members')
-        .insert([{ group_id: newGroup.id, user_id: user.id, role: 'leader' }]);
-      if (memberError) throw memberError;
       toast.success(`Group '${name}' created successfully!`);
       navigate(`/group/${newGroup.id}`);
     } catch (error) {

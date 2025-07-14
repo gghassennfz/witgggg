@@ -16,28 +16,18 @@ const Groups = () => {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error('User not found');
 
-        // Fetch the group_ids the user is a member of
-        const { data: memberEntries, error: memberError } = await supabase
-          .from('group_members')
-          .select('group_id')
-          .eq('user_id', user.id);
+        // Fetch groups where the current user's ID is in members array with status 'accepted'
+        const { data: groupData, error: groupError } = await supabase
+          .from('groups')
+          .select('*')
+          .filter(
+            'members',
+            'cs',
+            JSON.stringify([{ user_id: user.id, status: 'accepted' }])
+          );
 
-        if (memberError) throw memberError;
-
-        const groupIds = memberEntries.map(entry => entry.group_id);
-
-        if (groupIds.length > 0) {
-            // Fetch the details of those groups
-            const { data: groupData, error: groupError } = await supabase
-            .from('groups')
-            .select('*')
-            .in('id', groupIds);
-
-            if (groupError) throw groupError;
-            setGroups(groupData);
-        } else {
-            setGroups([]);
-        }
+        if (groupError) throw groupError;
+        setGroups(groupData || []);
 
       } catch (err) {
         toast.error(err.message || 'Failed to fetch groups.');

@@ -160,29 +160,44 @@ const Group = () => {
   }, [fetchMates]);
 
   // Fetch group details, members, and projects
-  const fetchGroupDetails = useCallback(async () => {
+  const fetchGroupDetails = async () => {
     setLoading(true);
     setError(null);
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Not authenticated');
       const token = session.access_token;
-      const res = await fetch(`${API_BASE_URL}/api/groups/${groupId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) throw new Error('Failed to fetch group');
-      const groupData = await res.json();
+      // Fetch group details
+      const groupData = await getGroupApi(groupId, token);
       setGroup(groupData);
-      setMembers(groupData.members || []);
-      setProjects(groupData.projects || []);
-      setChatUser(session.user);
+      // Fetch members from members jsonb array
+      let memberRows = [];
+      if (groupData && Array.isArray(groupData.members) && groupData.members.length > 0) {
+        // Optionally, only show accepted members, or show all with status
+        const acceptedMembers = groupData.members.filter(m => m.status === 'accepted');
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('id', acceptedMembers.map(m => m.user_id));
+        if (profilesError) throw profilesError;
+        memberRows = acceptedMembers.map(m => ({
+          user: profiles.find(p => p.id === m.user_id),
+          status: m.status
+        }));
+      }
+      setMembers(memberRows);
+      // Fetch projects
+      const { data: projectRows, error: projectError } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('group_id', groupId);
+      if (projectError) throw projectError;
+      setProjects(projectRows);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Failed to load group');
     } finally {
       setLoading(false);
     }
-  }, [groupId]);
-
+  };
   useEffect(() => {
     fetchGroupDetails();
     // eslint-disable-next-line
@@ -200,16 +215,23 @@ const Group = () => {
         .eq('email', email)
         .single();
       if (userError || !user) throw new Error('User not found');
-      // Add member via backend
-      const res = await fetch(`${API_BASE_URL}/api/groups/${groupId}/members`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ user_id: user.id, role: 'member' })
-      });
-      if (!res.ok) throw new Error('Failed to invite user');
+      // Fetch current members array
+      const { data: groupData, error: groupError } = await supabase
+        .from('groups')
+        .select('members')
+        .eq('id', groupId)
+        .single();
+      if (groupError) throw groupError;
+      const currentMembers = groupData.members || [];
+      // Only add if not already present
+      if (!currentMembers.some(m => m.user_id === user.id)) {
+        const updatedMembers = [...currentMembers, { user_id: user.id, status: 'pending' }];
+        const { error: updateError } = await supabase
+          .from('groups')
+          .update({ members: updatedMembers })
+          .eq('id', groupId);
+        if (updateError) throw updateError;
+      }
       await fetchGroupDetails();
       alert('User invited!');
     } catch (err) {
@@ -273,39 +295,58 @@ const Group = () => {
   function MembersTab() {
   const [inviteEmail, setInviteEmail] = useState('');
   return (
-    <div>
-      <h2>Members</h2>
+    <div className="members-tab">
+      <h2 style={{ color: '#222', marginBottom: '1.3rem' }}>Members</h2>
       <ul className="member-list">
-        {members.map(m => (
-          <li key={m.user?.id || m.user_id}>
-            {m.user?.username || m.user_id} ({m.role})
-            <button onClick={() => handleRemoveMember(m.user?.id || m.user_id)} style={{marginLeft:8}}>Remove</button>
+        {members.length > 0 ? members.map(m => (
+          <li className="member-row" key={m.user?.id || m.user_id}>
+            <img
+              className="avatar"
+              src={m.user?.avatar_url || '/default-avatar.png'}
+              alt={m.user?.username || 'User'}
+              style={{ background: '#eee', border: '1px solid #ccc' }}
+            />
+            <span className="member-name" style={{ color: '#222' }}>{m.user?.username || m.user_id}</span>
+            {m.status && (
+              <span className="member-role" style={{ color: m.status === 'accepted' ? '#27ae60' : m.status === 'pending' ? '#f39c12' : '#888', fontWeight: 500, marginLeft: 8, marginRight: 8 }}>
+                {m.status.charAt(0).toUpperCase() + m.status.slice(1)}
+              </span>
+            )}
+            <button className="remove-btn" onClick={() => handleRemoveMember(m.user?.id || m.user_id)}>
+              Remove
+            </button>
           </li>
-        ))}
+        )) : (
+          <li className="member-row empty">No members yet.</li>
+        )}
       </ul>
 
-      {/* --- New: Invite mates who are not in the group --- */}
-      <div style={{ marginTop: 24 }}>
-        <h3>Invite a Mate</h3>
+      <div style={{ marginTop: 32, background: '#f7faff', padding: '1.2rem 1.5rem', borderRadius: 10, boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+        <h3 style={{ color: '#007bff', marginBottom: 12 }}>Invite a Mate</h3>
         {eligibleInvitees.length > 0 ? (
           <ul className="invite-list">
             {eligibleInvitees.map(mate => (
-              <li key={mate.mateInfo?.id || mate.id}>
-                <span>{mate.mateInfo?.username || mate.username} (#{mate.mateInfo?.code || mate.code})</span>
-                <button style={{marginLeft:8}} onClick={() => handleInvite(mate.mateInfo?.email || mate.email)}>Invite</button>
+              <li className="member-row" key={mate.mateInfo?.id || mate.id}>
+                <span style={{ color: '#222' }}>{mate.mateInfo?.username || mate.username} <span style={{ color: '#888' }}>(#{mate.mateInfo?.code || mate.code})</span></span>
+                <button className="remove-btn" style={{ background: '#27ae60', marginLeft: 12 }} onClick={() => handleInvite(mate.mateInfo?.email || mate.email)}>Invite</button>
               </li>
             ))}
           </ul>
         ) : (
-          <p>No mates available to invite.</p>
+          <p style={{ color: '#888', margin: 0 }}>No mates available to invite.</p>
         )}
+        <form className="invite-form" onSubmit={e => { e.preventDefault(); handleInvite(inviteEmail); setInviteEmail(''); }} style={{ marginTop: 18 }}>
+          <input
+            type="email"
+            value={inviteEmail}
+            onChange={e => setInviteEmail(e.target.value)}
+            placeholder="Invite by email..."
+            required
+            style={{ color: '#222', background: '#fff', border: '1px solid #bbb' }}
+          />
+          <button type="submit" style={{ background: '#007bff', color: '#fff', fontWeight: 500 }}>Invite</button>
+        </form>
       </div>
-
-      {/* Fallback: old invite by email */}
-      <form onSubmit={e => { e.preventDefault(); handleInvite(inviteEmail); setInviteEmail(''); }} style={{ marginTop: 16 }}>
-        <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="Invite by email..." required />
-        <button type="submit">Invite</button>
-      </form>
     </div>
   );
 }

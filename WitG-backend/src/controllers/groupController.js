@@ -40,30 +40,28 @@ exports.createGroup = async (req, res) => {
   res.status(201).json(groupData);
 };
 
-// Get group details with members and projects
+// Get group details with members (jsonb) and projects
 exports.getGroupDetails = async (req, res) => {
   const { id } = req.params;
   try {
-    const { data: group, error } = await supabase
+    // Fetch group row (including members jsonb)
+    const { data: group, error: groupError } = await supabase
       .from('groups')
-      .select(`*,
-        members:group_members (
-          id,
-          role,
-          user:profiles (id, username, email, avatar_url)
-        ),
-        projects:projects (
-          id,
-          name,
-          description,
-          created_at
-        )
-      `)
+      .select('*')
       .eq('id', id)
       .single();
-    if (error) throw error;
+    if (groupError) throw groupError;
     if (!group) return res.status(404).json({ error: 'Group not found' });
-    res.json(group);
+
+    // Fetch projects for the group
+    const { data: projects, error: projectsError } = await supabase
+      .from('projects')
+      .select('id, name, description, created_at')
+      .eq('group_id', id);
+    if (projectsError) throw projectsError;
+
+    // Return group details, members (jsonb array), and projects
+    res.json({ ...group, projects });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
