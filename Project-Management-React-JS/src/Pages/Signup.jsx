@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient';
 import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'react-toastify';
+import '../styles/design-system.css';
 import './Auth.css';
 
 export default function Signup() {

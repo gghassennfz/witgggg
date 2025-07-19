@@ -6,6 +6,7 @@ import TasksPage from './MyWorkspace/TasksPage';
 import ActivityPage from './MyWorkspace/ActivityPage';
 import CalendarPage from './MyWorkspace/CalendarPage';
 import FilesPage from './MyWorkspace/FilesPage';
+import '../styles/design-system.css';
 import './MyWorkspace/MyWorkspace.css';
 
 function getNowTime() {
@@ -150,38 +151,135 @@ export default function MyWorkspace({ groupId }) {
     if (file) logActivity(`Deleted file: "${file.name}"`, 'file');
   };
 
+  const workspaceTabs = [
+    {
+      path: 'tasks',
+      label: 'Tasks',
+      icon: '✅',
+      description: 'Manage your tasks and to-dos',
+      count: tasks.length
+    },
+    {
+      path: 'activity',
+      label: 'Activity',
+      icon: '📊',
+      description: 'View recent workspace activity',
+      count: activity.length
+    },
+    {
+      path: 'calendar',
+      label: 'Calendar',
+      icon: '📅',
+      description: 'Schedule and track events',
+      count: calendarEvents.length
+    },
+    {
+      path: 'files',
+      label: 'Files',
+      icon: '📁',
+      description: 'Manage workspace files',
+      count: files.length
+    }
+  ];
+
+  if (loading) {
+    return (
+      <div className="myworkspace-page">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading workspace...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="myworkspace-page">
+        <div className="error-container">
+          <div className="error-icon">⚠️</div>
+          <h3>Error Loading Workspace</h3>
+          <p>{error}</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="myworkspace-container">
-      <nav className="myworkspace-navbar">
-        <NavLink to="tasks" className={({ isActive }) => isActive ? 'active' : ''}>Tasks</NavLink>
-        <NavLink to="activity" className={({ isActive }) => isActive ? 'active' : ''}>Recent Activity</NavLink>
-        <NavLink to="calendar" className={({ isActive }) => isActive ? 'active' : ''}>Calendar</NavLink>
-        <NavLink to="files" className={({ isActive }) => isActive ? 'active' : ''}>Files</NavLink>
-      </nav>
-      <div className="myworkspace-content">
-        <Routes>
-          <Route index element={<Navigate to="tasks" replace />} />
-          <Route path="tasks" element={<TasksPage
-            tasks={tasks}
-            addTask={addTask}
-            editTask={editTask}
-            deleteTask={deleteTask}
-            toggleDone={toggleDone}
-            reorderTasks={reorderTasks}
-          />} />
-          <Route path="activity" element={<ActivityPage activity={activity} />} />
-          <Route path="calendar" element={<CalendarPage
-            tasks={tasks}
-            events={calendarEvents}
-            addOrEditEvent={addOrEditEvent}
-            deleteEvent={deleteEvent}
-          />} />
-          <Route path="files" element={<FilesPage
-            files={files}
-            onUpload={handleUploadFiles}
-            onDelete={handleDeleteFile}
-          />} />
-        </Routes>
+    <div className="myworkspace-page">
+      <div className="page-hero">
+        <div className="hero-content">
+          <h1 className="page-title">
+            <span className="title-icon">🏢</span>
+            {groupId ? 'Group Workspace' : 'My Workspace'}
+          </h1>
+          <p className="page-subtitle">
+            {groupId ? 'Collaborate with your team members' : 'Organize your personal tasks and projects'}
+          </p>
+          
+          <div className="workspace-stats">
+            {workspaceTabs.map((tab) => (
+              <div key={tab.path} className="stat-card">
+                <div className="stat-icon">{tab.icon}</div>
+                <div className="stat-info">
+                  <div className="stat-value">{tab.count}</div>
+                  <div className="stat-label">{tab.label}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="myworkspace-container">
+        <nav className="myworkspace-navbar">
+          <div className="navbar-header">
+            <h3 className="navbar-title">Workspace</h3>
+          </div>
+          
+          <div className="navbar-tabs">
+            {workspaceTabs.map((tab) => (
+              <NavLink 
+                key={tab.path}
+                to={tab.path} 
+                className={({ isActive }) => `nav-tab ${isActive ? 'active' : ''}`}
+              >
+                <div className="tab-icon">{tab.icon}</div>
+                <div className="tab-content">
+                  <span className="tab-label">{tab.label}</span>
+                  <span className="tab-description">{tab.description}</span>
+                </div>
+                <div className="tab-badge">{tab.count}</div>
+              </NavLink>
+            ))}
+          </div>
+        </nav>
+        
+        <div className="myworkspace-content">
+          <Routes>
+            <Route index element={<Navigate to="tasks" replace />} />
+            <Route path="tasks" element={<TasksPage
+              tasks={tasks}
+              addTask={addTask}
+              editTask={editTask}
+              deleteTask={deleteTask}
+              toggleDone={toggleDone}
+              reorderTasks={reorderTasks}
+            />} />
+            <Route path="activity" element={<ActivityPage activity={activity} />} />
+            <Route path="calendar" element={<CalendarPage
+              tasks={tasks}
+              events={calendarEvents}
+              addOrEditEvent={addOrEditEvent}
+              deleteEvent={deleteEvent}
+            />} />
+            <Route path="files" element={<FilesPage
+              files={files}
+              onUpload={handleUploadFiles}
+              onDelete={handleDeleteFile}
+            />} />
+          </Routes>
+        </div>
       </div>
     </div>
   );

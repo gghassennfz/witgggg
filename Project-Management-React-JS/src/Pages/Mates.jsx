@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { Helmet } from "react-helmet-async"
 import { supabase } from "../supabaseClient"
+import "../styles/design-system.css"
 import "./Mates.css"
 import API_BASE_URL from "../apiConfig"
 
@@ -103,56 +104,168 @@ const Mates = () => {
     }
   }
 
-  if (loading) return <div>Loading...</div>
+  if (loading) {
+    return (
+      <div className="mates-page">
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <p>Loading your mates...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
       <Helmet>
         <title>My Mates - WitG</title>
       </Helmet>
-      <div className="mates-container">
-        <header className="mates-header">
-          <h1>My Mates</h1>
-          {myProfile && (
-            <div className="my-code-section">
-              <span>Your Unique Code:</span>
-              <strong className="user-code">#{myProfile.user_code}</strong>
-            </div>
-          )}
-        </header>
+      
+      <div className="mates-page">
+        <div className="page-hero">
+          <div className="hero-content">
+            <h1 className="page-title">
+              <span className="title-icon">👥</span>
+              My Mates
+            </h1>
+            <p className="page-subtitle">
+              Connect and collaborate with your team members
+            </p>
+            
+            {myProfile && (
+              <div className="user-code-card">
+                <div className="code-header">
+                  <span className="code-icon">🔗</span>
+                  <span className="code-label">Your Unique Code</span>
+                </div>
+                <div className="code-value">#{myProfile.user_code}</div>
+                <div className="code-description">
+                  Share this code with others to connect
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
 
-        {error && <div className="error-message">{error}</div>}
-        {notification && <div className="notification-message">{notification}</div>}
+        {error && (
+          <div className="alert alert-error">
+            <span className="alert-icon">⚠️</span>
+            <span className="alert-message">{error}</span>
+          </div>
+        )}
+        
+        {notification && (
+          <div className="alert alert-success">
+            <span className="alert-icon">✅</span>
+            <span className="alert-message">{notification}</span>
+          </div>
+        )}
 
-        <div className="mates-content">
+        <div className="mates-container">
           <div className="mates-main">
-            <h2>Add a Mate</h2>
-            <form onSubmit={handleSendRequest} className="add-mate-form" ref={searchRef}>
-              <input type="text" name="search" id="search" placeholder="Enter a mate's email, username, or code" />
-              <button type="submit">Send Request</button>
-            </form>
-
-            <h2>Mates ({mates.length})</h2>
-            <div className="mates-list">
-              {mates.length > 0 ? (
-                mates.map(mate => (
-                  <div key={mate.requestId || mate.id || mate.mateInfo?.id} className="mate-card">
-                    <img src={mate.mateInfo?.avatar_url || mate.avatar_url || "https://i.pravatar.cc/40"} alt="avatar" className="avatar" />
-                    <div className="mate-details">
-                      <strong>{mate.mateInfo?.full_name || mate.mateInfo?.username || mate.username}</strong>
-                      <span>#{mate.mateInfo?.code || mate.code}</span>
-                    </div>
+            <div className="add-mate-section">
+              <div className="section-header">
+                <h2 className="section-title">
+                  <span className="section-icon">➕</span>
+                  Add New Mate
+                </h2>
+                <p className="section-description">
+                  Send a connection request using email, username, or unique code
+                </p>
+              </div>
+              
+              <form onSubmit={handleSendRequest} className="add-mate-form" ref={searchRef}>
+                <div className="form-group">
+                  <div className="input-wrapper">
+                    <input 
+                      type="text" 
+                      name="search" 
+                      id="search" 
+                      className="form-input"
+                      placeholder="Enter email, username, or #code" 
+                    />
+                    <button type="submit" className="btn btn-primary">
+                      <span className="btn-icon">📤</span>
+                      Send Request
+                    </button>
                   </div>
-                ))
-              ) : (
-                <p>You haven&apos;t added any mates yet.</p>
-              )}
+                </div>
+              </form>
+            </div>
+
+            <div className="mates-list-section">
+              <div className="section-header">
+                <h2 className="section-title">
+                  <span className="section-icon">👥</span>
+                  My Mates ({mates.length})
+                </h2>
+                <div className="mates-stats">
+                  <div className="stat-item">
+                    <span className="stat-value">{mates.length}</span>
+                    <span className="stat-label">Connected</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mates-grid">
+                {mates.length > 0 ? (
+                  mates.map(mate => (
+                    <div key={mate.requestId || mate.id || mate.mateInfo?.id} className="mate-card">
+                      <div className="mate-avatar">
+                        <img 
+                          src={mate.mateInfo?.avatar_url || mate.avatar_url || "https://i.pravatar.cc/60"} 
+                          alt="avatar" 
+                          className="avatar-image" 
+                        />
+                        <div className="status-indicator online"></div>
+                      </div>
+                      
+                      <div className="mate-info">
+                        <h3 className="mate-name">
+                          {mate.mateInfo?.full_name || mate.mateInfo?.username || mate.username}
+                        </h3>
+                        <p className="mate-code">#{mate.mateInfo?.code || mate.code}</p>
+                        <div className="mate-actions">
+                          <button className="action-btn message">
+                            <span className="btn-icon">💬</span>
+                            Message
+                          </button>
+                          <button className="action-btn profile">
+                            <span className="btn-icon">👤</span>
+                            Profile
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="empty-state">
+                    <div className="empty-icon">👥</div>
+                    <h3 className="empty-title">No mates yet</h3>
+                    <p className="empty-description">
+                      Start building your network by adding your first mate above
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
           <aside className="mates-sidebar">
-            <h2>Pending Requests</h2>
-            <PendingRequestsSection myProfile={myProfile} fetchUserData={fetchUserData} setError={setError} setNotification={setNotification} />
+            <div className="sidebar-section">
+              <div className="section-header">
+                <h3 className="section-title">
+                  <span className="section-icon">⏳</span>
+                  Pending Requests
+                </h3>
+              </div>
+              <PendingRequestsSection 
+                myProfile={myProfile} 
+                fetchUserData={fetchUserData} 
+                setError={setError} 
+                setNotification={setNotification} 
+              />
+            </div>
           </aside>
         </div>
       </div>

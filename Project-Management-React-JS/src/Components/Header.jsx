@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
+import '../styles/design-system.css';
 import './Header.css';
 import API_BASE_URL from '../apiConfig';
 
@@ -45,38 +46,72 @@ const Header = () => {
 
   return (
     <header className="header">
-      <div className="header-search">
-        <i className="uil uil-search"></i>
-        <input type="text" placeholder="Search for projects, tasks..." />
+      <div className="header-brand">
+        <Link to="/dashboard" className="brand-link">
+          <div className="brand-icon">🚀</div>
+          <span className="brand-text">WitG</span>
+        </Link>
       </div>
-      <Link to="/settings" className="header-user-link">
-        <div className="header-user">
-          {loading ? (
-            <div className="user-info">
-              <span className="user-name">Loading...</span>
-            </div>
-          ) : profile ? (
-            <>
-              <div className="user-info">
-                <span className="user-name">{profile.username || 'User'}</span>
-                {/* The user-role span is removed as requested */}
-              </div>
-              <img 
-                src={profile.avatar_url || defaultAvatar} 
-                alt="User Avatar" 
-                className="user-avatar" 
-              />
-            </>
-          ) : (
-            <>
-              <div className="user-info">
-                <span className="user-name">Guest</span>
-              </div>
-              <img src={defaultAvatar} alt="Default Avatar" className="user-avatar" />
-            </>
-          )}
+      
+      <div className="header-search">
+        <div className="search-container">
+          <i className="search-icon uil uil-search"></i>
+          <input 
+            type="text" 
+            placeholder="Search projects, tasks, groups..." 
+            className="search-input"
+          />
+          <div className="search-shortcut">⌘K</div>
         </div>
-      </Link>
+      </div>
+      
+      <div className="header-actions">
+        <button className="action-btn notification-btn">
+          <i className="uil uil-bell"></i>
+          <span className="notification-badge">3</span>
+        </button>
+        
+        <button className="action-btn theme-toggle">
+          <i className="uil uil-moon"></i>
+        </button>
+        
+        <Link to="/settings" className="header-user-link">
+          <div className="header-user">
+            {loading ? (
+              <div className="user-skeleton">
+                <div className="skeleton-avatar"></div>
+                <div className="skeleton-text"></div>
+              </div>
+            ) : profile ? (
+              <>
+                <div className="user-info">
+                  <span className="user-name">{profile.username || 'User'}</span>
+                  <span className="user-status">Online</span>
+                </div>
+                <div className="user-avatar-container">
+                  <img 
+                    src={profile.avatar_url || defaultAvatar} 
+                    alt="User Avatar" 
+                    className="user-avatar" 
+                  />
+                  <div className="status-indicator"></div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="user-info">
+                  <span className="user-name">Guest</span>
+                  <span className="user-status">Offline</span>
+                </div>
+                <div className="user-avatar-container">
+                  <img src={defaultAvatar} alt="Default Avatar" className="user-avatar" />
+                  <div className="status-indicator offline"></div>
+                </div>
+              </>
+            )}
+          </div>
+        </Link>
+      </div>
     </header>
   );
 }
