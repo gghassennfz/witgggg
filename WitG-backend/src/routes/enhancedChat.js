@@ -154,47 +154,8 @@ router.get('/chats/:chatId/messages', async (req, res) => {
     const { data: messages, error } = await query;
     
     if (error) throw error;
-
-    // Get unique user IDs from messages and reactions
-    const userIds = new Set();
-    messages.forEach(msg => {
-      userIds.add(msg.sender_id);
-      msg.message_reactions?.forEach(reaction => {
-        userIds.add(reaction.user_id);
-      });
-    });
-
-    // Fetch user data from users table (assuming you have one) or use a simpler approach
-    let usersData = {};
-    if (userIds.size > 0) {
-      try {
-        const { data: users } = await supabase
-          .from('users')
-          .select('id, email, name, avatar_url')
-          .in('id', Array.from(userIds));
-        
-        if (users) {
-          users.forEach(user => {
-            usersData[user.id] = user;
-          });
-        }
-      } catch (userError) {
-        console.warn('Could not fetch user data:', userError.message);
-        // Continue without user data if users table doesn't exist
-      }
-    }
-
-    // Enhance messages with user data
-    const enhancedMessages = messages.map(msg => ({
-      ...msg,
-      sender: usersData[msg.sender_id] || { id: msg.sender_id, email: 'Unknown', name: 'Unknown User' },
-      message_reactions: msg.message_reactions?.map(reaction => ({
-        ...reaction,
-        user: usersData[reaction.user_id] || { id: reaction.user_id, email: 'Unknown', name: 'Unknown User' }
-      })) || []
-    }));
     
-    res.json(enhancedMessages.reverse()); // Return in chronological order
+    res.json(messages.reverse()); // Return in chronological order
   } catch (error) {
     console.error('Error fetching messages:', error);
     res.status(500).json({ error: error.message });
