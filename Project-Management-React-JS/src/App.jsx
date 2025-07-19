@@ -18,6 +18,8 @@ import CreateGroup from "./Pages/CreateGroup";
 import PersonalWorkspace from "./Pages/PersonalWorkspace";
 import MyWorkspace from "./Pages/MyWorkspace";
 import GroupRequests from "./Pages/GroupRequests";
+import Projects from "./Pages/Projects";
+import ProjectDetails from "./Pages/ProjectDetails";
 
 function App() {
   return (
@@ -34,6 +36,8 @@ function App() {
                 <Route path="group/create" element={<CreateGroup />} />
                 <Route path="group/requests" element={<GroupRequests />} />
                 <Route path="group/:groupId" element={<Group />} />
+                <Route path="group/:groupId/projects" element={<Projects />} />
+                <Route path="group/:groupId/project/:projectId" element={<ProjectDetails />} />
                 <Route path="mates" element={<Mates />} />
                 <Route path="settings" element={<Settings />} />
                 <Route path="personalworkspace/*" element={<MyWorkspace />} />

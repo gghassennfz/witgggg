@@ -19,6 +19,11 @@ const taskRoutes = require('./routes/tasks');
 const mateRoutes = require('./routes/mates');
 const profileRoutes = require('./routes/profile');
 const personalAssetsRoutes = require('./routes/personalAssetsRoutes');
+const projectRoutes = require('./routes/projects');
+const projectTaskRoutes = require('./routes/projectTasks');
+const projectCalendarRoutes = require('./routes/projectCalendar');
+const projectLogsRoutes = require('./routes/projectLogs');
+const projectFilesRoutes = require('./routes/projectFiles');
 
 // --- App Initialization ---
 const app = express();
@@ -33,10 +38,17 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/mates', mateRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/personal-assets', personalAssetsRoutes);
+app.use('/api/projects', projectRoutes);
+app.use('/api/project-tasks', projectTaskRoutes);
+app.use('/api/project-calendar', projectCalendarRoutes);
+app.use('/api/project-logs', projectLogsRoutes);
+app.use('/api/project-files', projectFilesRoutes);
 
 // --- Chat API ---
 const chatRoutes = require('./routes/chat');
+const enhancedChatRoutes = require('./routes/enhancedChat');
 app.use('/api/chat', chatRoutes);
+app.use('/api/enhanced-chat', enhancedChatRoutes);
 
 // --- User API ---
 const userRoutes = require('./routes/users');
@@ -56,75 +68,66 @@ const http = require('http');
 const { Server } = require('socket.io');
 const PORT = process.env.PORT || 4001;
 
-// Create HTTP server and bind Express app
-const server = http.createServer(app);
+// --- Socket.IO Setup ---
+const socketIo = require('socket.io');
+const ChatSocketHandler = require('./socketHandlers/chatSocketHandler');
 
-// Initialize Socket.IO
-const io = new Server(server, {
+const server = http.createServer(app);
+const io = socketIo(server, {
   cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
+    origin: "*",
+    methods: ["GET", "POST"]
   }
 });
 
-// In-memory user map for demo (replace with DB in production)
-const onlineUsers = {};
+// Initialize enhanced chat socket handler
+const chatSocketHandler = new ChatSocketHandler(io);
 
+// --- Socket.IO Event Handlers ---
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  // Handle user joining with userId
+  // Use enhanced chat handler for all chat-related events
+  chatSocketHandler.handleConnection(socket);
+
+  // Legacy handlers for backward compatibility
   socket.on('join', (userId) => {
-    onlineUsers[userId] = socket.id;
-    io.emit('presence', Object.keys(onlineUsers));
+    socket.userId = userId;
+    socket.join(userId);
+    console.log(`User ${userId} joined (legacy)`);
   });
 
-  // Handle sending messages (direct or group)
-  socket.on('send_message', async (data) => {
-    // data: { to, from, message, groupId }
-    try {
-      // Save message to DB (Supabase)
-      const { saveMessage } = require('./controllers/chatController');
-      await saveMessage(data);
-    } catch (err) {
-      console.error('Failed to save message:', err);
-    }
-    if (data.groupId) {
-      // Group message: emit to room
-      io.to(data.groupId).emit('receive_message', data);
-    } else if (data.to && onlineUsers[data.to]) {
-      // Direct message
-      io.to(onlineUsers[data.to]).emit('receive_message', data);
-    }
-  });
-
-  // Handle sending notifications
-  socket.on('send_notification', async (notif) => {
-    // notif: { to, type, message, data }
-    try {
-      const { saveNotification } = require('./controllers/notificationController');
-      await saveNotification(notif);
-    } catch (err) {
-      console.error('Failed to save notification:', err);
-    }
-    if (notif.to && onlineUsers[notif.to]) {
-      io.to(onlineUsers[notif.to]).emit('receive_notification', notif);
-    }
-  });
-
-  // Join group room
-  socket.on('join_group', (groupId) => {
+  socket.on('joinGroup', (groupId) => {
     socket.join(groupId);
+    console.log(`User ${socket.userId} joined group ${groupId} (legacy)`);
   });
 
-  // Typing indicator
+  socket.on('leaveGroup', (groupId) => {
+    socket.leave(groupId);
+    console.log(`User ${socket.userId} left group ${groupId} (legacy)`);
+  });
+
+  socket.on('sendMessage', (data) => {
+    const { groupId, message, sender } = data;
+    io.to(groupId).emit('receiveMessage', {
+      message,
+      sender,
+      timestamp: new Date()
+    });
+    console.log(`Message sent to group ${groupId} (legacy):`, message);
+  });
+
   socket.on('typing', (data) => {
-    // data: { to, from, groupId }
-    if (data.groupId) {
-      socket.to(data.groupId).emit('typing', data);
-    } else if (data.to && onlineUsers[data.to]) {
-      socket.to(onlineUsers[data.to]).emit('typing', data);
-    }
+    const { groupId, isTyping, user } = data;
+    socket.to(groupId).emit('userTyping', { isTyping, user });
+  });
+
+  socket.on('userOnline', (userId) => {
+    socket.broadcast.emit('userStatusChanged', { userId, status: 'online' });
+  });
+
+  socket.on('userOffline', (userId) => {
+    socket.broadcast.emit('userStatusChanged', { userId, status: 'offline' });
   });
 
   // Call signaling events
@@ -159,13 +162,12 @@ io.on('connection', (socket) => {
   // Handle disconnect
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
-    for (const [userId, id] of Object.entries(onlineUsers)) {
-      if (id === socket.id) {
-        delete onlineUsers[userId];
-        break;
-      }
+    if (socket.userId) {
+      socket.broadcast.emit('userStatusChanged', { 
+        userId: socket.userId, 
+        status: 'offline' 
+      });
     }
-    io.emit('presence', Object.keys(onlineUsers));
   });
 });
 

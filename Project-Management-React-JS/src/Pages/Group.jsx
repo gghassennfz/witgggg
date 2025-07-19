@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 import { Helmet } from 'react-helmet-async';
+import { toast } from 'react-toastify';
 import './Group.css';
 import '../Components/GroupCallModal.css';
 import GroupCallModal from '../Components/GroupCallModal';
+import EnhancedGroupChat from '../Components/EnhancedGroupChat';
 import API_BASE_URL from '../apiConfig';
 import socket from '../socket';
+import { fetchGroupMessages, sendGroupMessage } from '../api/groupMessages';
 
 // --- Helper API functions ---
 const getGroupApi = (groupId, token) => {
@@ -113,6 +116,7 @@ function TabNav({ tabs, activeTab, setActiveTab }) {
 
 const Group = () => {
   const { groupId } = useParams();
+  const navigate = useNavigate();
   const [group, setGroup] = useState(null);
   const [members, setMembers] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -355,33 +359,151 @@ const Group = () => {
 
 
   function ProjectsTab() {
-    const [name, setName] = useState('');
-    const [desc, setDesc] = useState('');
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    
+    const handleCreateProject = async (projectData) => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+
+        const response = await fetch(`${API_BASE_URL}/api/projects`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            ...projectData,
+            group_id: groupId
+          })
+        });
+
+        if (response.ok) {
+          const newProject = await response.json();
+          setProjects(prev => [newProject, ...prev]);
+          setShowCreateModal(false);
+          toast.success('Project created successfully!');
+          
+          // Navigate to project details
+          navigate(`/group/${groupId}/project/${newProject.id}`);
+        } else {
+          throw new Error('Failed to create project');
+        }
+      } catch (error) {
+        console.error('Error creating project:', error);
+        toast.error('Failed to create project');
+      }
+    };
+
+    const getStatusColor = (status) => {
+      switch (status) {
+        case 'active': return '#52c41a';
+        case 'completed': return '#1890ff';
+        case 'archived': return '#8c8c8c';
+        default: return '#52c41a';
+      }
+    };
+
+    const getPriorityColor = (priority) => {
+      switch (priority) {
+        case 'high': return '#ff4d4f';
+        case 'medium': return '#faad14';
+        case 'low': return '#52c41a';
+        default: return '#faad14';
+      }
+    };
+
     return (
-      <div>
-        <h2>Projects</h2>
-        <form onSubmit={e => { e.preventDefault(); handleCreateProject(name, desc); setName(''); setDesc(''); }} style={{ marginBottom: 16 }}>
-          <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Project name..." required />
-          <input type="text" value={desc} onChange={e => setDesc(e.target.value)} placeholder="Description..." />
-          <button type="submit">+ Add Project</button>
-        </form>
-        <ul className="project-list">
-          {projects.map(p => (
-            <li key={p.id}>
-              <b>{p.name}</b> - {p.description}
-              <button onClick={() => handleDeleteProject(p.id)} style={{marginLeft:8}}>Delete</button>
-            </li>
-          ))}
-        </ul>
+      <div className="projects-tab">
+        <div className="projects-header">
+          <div className="header-info">
+            <h2>Projects</h2>
+            <span className="projects-count">{projects.length} project(s)</span>
+          </div>
+          <button 
+            className="btn btn-primary"
+            onClick={() => setShowCreateModal(true)}
+          >
+            + Create Project
+          </button>
+        </div>
+
+        {projects.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">📋</div>
+            <h3>No projects yet</h3>
+            <p>Create your first project to get started with organized collaboration.</p>
+            <button 
+              className="btn btn-primary"
+              onClick={() => setShowCreateModal(true)}
+            >
+              Create First Project
+            </button>
+          </div>
+        ) : (
+          <div className="projects-grid">
+            {projects.map(project => (
+              <div key={project.id} className="project-card">
+                <div className="project-header">
+                  <div className="project-color" style={{ backgroundColor: project.color || '#007bff' }}></div>
+                  <div className="project-meta">
+                    <div className="project-status" style={{ color: getStatusColor(project.status) }}>
+                      {project.status?.charAt(0).toUpperCase() + project.status?.slice(1) || 'Active'}
+                    </div>
+                    <div className="project-priority" style={{ color: getPriorityColor(project.priority) }}>
+                      {project.priority?.charAt(0).toUpperCase() + project.priority?.slice(1) || 'Medium'} Priority
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="project-content">
+                  <h3 className="project-title">{project.name}</h3>
+                  <p className="project-description">{project.description}</p>
+                  
+                  {project.due_date && (
+                    <div className="project-due-date">
+                      <span>Due: {new Date(project.due_date).toLocaleDateString()}</span>
+                    </div>
+                  )}
+                  
+                  <div className="project-members">
+                    <span className="members-count">
+                      {members.length} member(s)
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="project-actions">
+                  <button 
+                    className="btn btn-primary btn-sm"
+                    onClick={() => navigate(`/group/${groupId}/project/${project.id}`)}
+                  >
+                    Open Project
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {showCreateModal && (
+          <CreateProjectModal
+            onClose={() => setShowCreateModal(false)}
+            onSubmit={handleCreateProject}
+          />
+        )}
       </div>
     );
   }
 
   function ChatTab() {
     return (
-      <div>
-        <h2>Group Chat</h2>
-        <GroupChat groupId={groupId} currentUserId={chatUser?.id} members={members} />
+      <div className="chat-tab-container">
+        <EnhancedGroupChat 
+          groupId={groupId} 
+          currentUser={chatUser}
+          groupMembers={members}
+        />
       </div>
     );
   }
@@ -444,19 +566,40 @@ function GroupChat({ groupId, currentUserId, members }) {
   const [input, setInput] = useState('');
   const [file, setFile] = useState(null);
   const messagesEndRef = React.useRef(null);
+  const [loading, setLoading] = useState(true);
 
+  // Fetch initial messages from backend
+  useEffect(() => {
+    let ignore = false;
+    async function fetchHistory() {
+      setLoading(true);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const token = session?.access_token;
+        if (!token) throw new Error('Not authenticated');
+        const msgs = await fetchGroupMessages(groupId, token);
+        if (!ignore) setMessages(msgs || []);
+      } catch (err) {
+        if (!ignore) setMessages([]);
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    }
+    fetchHistory();
+    return () => { ignore = true; };
+  }, [groupId]);
+
+  // Socket setup for real-time
   useEffect(() => {
     if (!socket.connected) {
       socket.connect();
     }
     socket.emit('join_group', groupId);
-    socket.on('group_message', msg => {
-      setMessages(prev => [...prev, msg]);
-    });
+    const handleMsg = msg => setMessages(prev => [...prev, msg]);
+    socket.on('group_message', handleMsg);
     return () => {
       socket.emit('leave_group', groupId);
-      socket.off('group_message');
-      // Do not disconnect socket globally, let it persist for the session
+      socket.off('group_message', handleMsg);
     };
   }, [groupId]);
 
@@ -464,20 +607,30 @@ function GroupChat({ groupId, currentUserId, members }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const sendMessage = e => {
+  // Send message: persist to backend, then emit
+  const sendMessage = async e => {
     e.preventDefault();
     if (!input && !file) return;
-    const msg = { groupId, userId: currentUserId, text: input, file: null };
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token;
+    if (!token) return;
+    let msg = { groupId, userId: currentUserId, text: input, file: null };
     if (file) {
       const reader = new FileReader();
-      reader.onload = () => {
-        msg.file = { name: file.name, data: reader.result };
-        socket.emit('group_message', msg);
+      reader.onload = async () => {
+        msg = { ...msg, file: { name: file.name, data: reader.result } };
+        try {
+          const saved = await sendGroupMessage(groupId, msg, token);
+          socket.emit('group_message', saved);
+        } catch (err) {}
       };
       reader.readAsDataURL(file);
       setFile(null);
     } else {
-      socket.emit('group_message', msg);
+      try {
+        const saved = await sendGroupMessage(groupId, msg, token);
+        socket.emit('group_message', saved);
+      } catch (err) {}
     }
     setInput('');
   };
@@ -501,58 +654,70 @@ function GroupChat({ groupId, currentUserId, members }) {
     <>
       <div className="group-chat" style={{ maxWidth: 700, margin: '0 auto', background: '#fff', borderRadius: 12, boxShadow: '0 2px 12px rgba(0,0,0,0.07)', padding: 0 }}>
         <div className="chat-messages" style={{ maxHeight: 400, overflowY: 'auto', padding: '24px 18px 12px 18px', background: '#f8fafd', borderRadius: '12px 12px 0 0' }}>
-          {messages.map((msg, i) => {
-            const sender = getSenderInfo(msg.userId);
-            const isImage = msg.file && msg.file.data && msg.file.data.startsWith('data:image');
-            return (
-              <div
-                key={i}
-                className="chat-msg"
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  marginBottom: 18,
-                  flexDirection: msg.userId === currentUserId ? 'row-reverse' : 'row',
-                  gap: 12,
-                }}
-              >
+          {/* Messenger-style grouped chat bubbles */}
+        {(() => {
+          // Helper: group consecutive messages by sender
+          const groups = [];
+          let lastSender = null, lastGroup = null;
+          messages.forEach((msg, i) => {
+            if (!lastGroup || msg.userId !== lastSender) {
+              lastGroup = { senderId: msg.userId, messages: [], sender: getSenderInfo(msg.userId), firstIndex: i, timestamp: msg.timestamp };
+              groups.push(lastGroup);
+              lastSender = msg.userId;
+            }
+            lastGroup.messages.push(msg);
+          });
+          return groups.map((group, gi) => (
+            <div
+              key={gi + '-' + group.senderId}
+              className={
+                'chat-message-group' +
+                (group.senderId === currentUserId ? ' chat-message-group-own' : '')
+              }
+            >
+              <div className="chat-message-group-header">
                 <img
-                  src={sender.avatar}
-                  alt={sender.username}
-                  style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '1px solid #bbb', background: '#eee' }}
+                  className="chat-avatar"
+                  src={group.sender.avatar}
+                  alt={group.sender.username}
                 />
-                <div style={{ maxWidth: '80%' }}>
-                  <div style={{ fontWeight: 500, color: '#222', fontSize: 15 }}>{sender.username}</div>
-                  <div
-                    style={{
-                      background: msg.userId === currentUserId ? '#d1f7c4' : '#e6eefa',
-                      borderRadius: 8,
-                      padding: '8px 12px',
-                      margin: '6px 0',
-                      wordBreak: 'break-word',
-                      color: '#222',
-                      fontSize: 15,
-                    }}
-                  >
-                    {msg.text && <span>{msg.text}</span>}
-                    {msg.file && (
-                      isImage ? (
-                        <div style={{ marginTop: 8 }}>
-                          <img src={msg.file.data} alt={msg.file.name} style={{ maxWidth: 180, maxHeight: 140, borderRadius: 6, border: '1px solid #eee', display: 'block' }} />
-                          <a href={msg.file.data} download={msg.file.name} style={{ fontSize: 13, color: '#007bff', display: 'block', marginTop: 4 }}>Download Image</a>
-                        </div>
-                      ) : (
-                        <div style={{ marginTop: 8 }}>
-                          <a href={msg.file.data} download={msg.file.name} style={{ fontSize: 14, color: '#007bff' }}>File: {msg.file.name}</a>
-                        </div>
-                      )
-                    )}
-                  </div>
-                  <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString() : ''}</div>
+                <div className="chat-message-meta">
+                  <span className="chat-message-username">{group.sender.username}</span>
+                  <span className="chat-message-time">{group.messages[0].timestamp ? new Date(group.messages[0].timestamp).toLocaleTimeString() : ''}</span>
                 </div>
               </div>
-            );
-          })}
+              <div className="chat-message-bubbles">
+                {group.messages.map((msg, mi) => {
+                  const isImage = msg.file && msg.file.data && msg.file.data.startsWith('data:image');
+                  return (
+                    <div
+                      key={mi}
+                      className={
+                        'chat-bubble' +
+                        (group.senderId === currentUserId ? ' chat-bubble-own' : '')
+                      }
+                    >
+                      {msg.text && <span>{msg.text}</span>}
+                      {msg.file && (
+                        isImage ? (
+                          <div style={{ marginTop: 6 }}>
+                            <img src={msg.file.data} alt={msg.file.name} style={{ maxWidth: 180, maxHeight: 140, borderRadius: 6, border: '1px solid #eee', display: 'block' }} />
+                            <a href={msg.file.data} download={msg.file.name} style={{ fontSize: 13, color: '#007bff', display: 'block', marginTop: 4 }}>Download Image</a>
+                          </div>
+                        ) : (
+                          <div style={{ marginTop: 6 }}>
+                            <a href={msg.file.data} download={msg.file.name} style={{ fontSize: 14, color: '#007bff' }}>File: {msg.file.name}</a>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ));
+        })()}
+
           <div ref={messagesEndRef} />
         </div>
         <form className="chat-input-form" onSubmit={sendMessage} style={{ display: 'flex', gap: 10, padding: '16px 18px', borderTop: '1px solid #f0f0f0', background: '#f8fafd', borderRadius: '0 0 12px 12px' }}>
@@ -594,6 +759,121 @@ function GroupChat({ groupId, currentUserId, members }) {
     </>
   );
 }
+
+// Create Project Modal Component
+const CreateProjectModal = ({ onClose, onSubmit }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    priority: 'medium',
+    color: '#007bff',
+    due_date: '',
+    github_repo: '',
+    design_files: [],
+    resources: {}
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.name.trim()) {
+      toast.error('Project name is required');
+      return;
+    }
+    onSubmit(formData);
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Create New Project</h2>
+          <button className="modal-close" onClick={onClose}>&times;</button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="modal-body">
+          <div className="form-group">
+            <label>Project Name *</label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="Enter project name..."
+              required
+            />
+          </div>
+          
+          <div className="form-group">
+            <label>Description</label>
+            <textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Describe your project..."
+              rows="3"
+            />
+          </div>
+          
+          <div className="form-row">
+            <div className="form-group">
+              <label>Priority</label>
+              <select name="priority" value={formData.priority} onChange={handleChange}>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
+            
+            <div className="form-group">
+              <label>Color</label>
+              <input
+                type="color"
+                name="color"
+                value={formData.color}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+          
+          <div className="form-group">
+            <label>Due Date</label>
+            <input
+              type="date"
+              name="due_date"
+              value={formData.due_date}
+              onChange={handleChange}
+            />
+          </div>
+          
+          <div className="form-group">
+            <label>GitHub Repository (Optional)</label>
+            <input
+              type="url"
+              name="github_repo"
+              value={formData.github_repo}
+              onChange={handleChange}
+              placeholder="https://github.com/username/repo"
+            />
+          </div>
+          
+          <div className="modal-actions">
+            <button type="button" className="btn btn-secondary" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary">
+              Create Project
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 export default Group;
 
