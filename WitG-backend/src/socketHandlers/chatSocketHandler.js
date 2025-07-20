@@ -59,7 +59,7 @@ class ChatSocketHandler {
           socket.emit("error", { message: "Access denied to chat" })
           return
         }
-
+        console.log(replyToId)
         // Create message in database
         const { data: message, error } = await supabase
           .from("messages")

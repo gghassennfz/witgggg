@@ -13,13 +13,13 @@
   --text-on-accent: #ffffff;
 }
 
-[data-theme='light'] {
+[data-theme="light"] {
   --background-primary: #f9fafb;
   --background-secondary: #ffffff;
   --background-tertiary: #f3f4f6;
   --border-primary: #e5e7eb;
-  --text-primary: #111827;
-  --text-secondary: #4b5563;
+  --text-primary: #ffffff;
+  --text-secondary: #b9b8b8;
   --accent-primary: #4f46e5;
   --accent-primary-hover: #6366f1;
   --text-on-accent: #ffffff;
@@ -27,7 +27,7 @@
 
 body {
   margin: 0;
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--background-primary);
