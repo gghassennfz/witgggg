@@ -59,14 +59,7 @@ class ChatSocketHandler {
           socket.emit("error", { message: "Access denied to chat" })
           return
         }
-        console.log({
-          chat_id: chatId,
-          sender_id: socket.userId,
-          content,
-          message_type: messageType || "text",
-          reply_to_id: replyToId,
-          metadata: metadata || {}
-        })
+
         // Create message in database
         const { data: message, error } = await supabase
           .from("messages")
@@ -147,12 +140,7 @@ class ChatSocketHandler {
             user_id: socket.userId,
             emoji
           })
-          .select(
-            `
-            *,
-            user:auth.users!message_reactions_user_id_fkey(id, email, raw_user_meta_data)
-          `
-          )
+          .select(`*`)
           .single()
 
         if (error) throw error
@@ -247,9 +235,7 @@ class ChatSocketHandler {
           })
           .select(
             `
-            *,
-            sender:auth.users!messages_sender_id_fkey(id, email, raw_user_meta_data)
-          `
+            *`
           )
           .single()
 
