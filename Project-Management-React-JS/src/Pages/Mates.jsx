@@ -19,6 +19,7 @@ const Mates = () => {
       const {
         data: { session }
       } = await supabase.auth.getSession()
+
       if (!session) throw new Error("Not authenticated")
       const token = session.access_token
 
@@ -120,7 +121,7 @@ const Mates = () => {
       <Helmet>
         <title>My Mates - WitG</title>
       </Helmet>
-      
+
       <div className="mates-page">
         <div className="page-hero">
           <div className="hero-content">
@@ -128,10 +129,8 @@ const Mates = () => {
               <span className="title-icon">👥</span>
               My Mates
             </h1>
-            <p className="page-subtitle">
-              Connect and collaborate with your team members
-            </p>
-            
+            <p className="page-subtitle">Connect and collaborate with your team members</p>
+
             {myProfile && (
               <div className="user-code-card">
                 <div className="code-header">
@@ -139,9 +138,7 @@ const Mates = () => {
                   <span className="code-label">Your Unique Code</span>
                 </div>
                 <div className="code-value">#{myProfile.user_code}</div>
-                <div className="code-description">
-                  Share this code with others to connect
-                </div>
+                <div className="code-description">Share this code with others to connect</div>
               </div>
             )}
           </div>
@@ -153,7 +150,7 @@ const Mates = () => {
             <span className="alert-message">{error}</span>
           </div>
         )}
-        
+
         {notification && (
           <div className="alert alert-success">
             <span className="alert-icon">✅</span>
@@ -169,21 +166,13 @@ const Mates = () => {
                   <span className="section-icon">➕</span>
                   Add New Mate
                 </h2>
-                <p className="section-description">
-                  Send a connection request using email, username, or unique code
-                </p>
+                <p className="section-description">Send a connection request using email, username, or unique code</p>
               </div>
-              
+
               <form onSubmit={handleSendRequest} className="add-mate-form" ref={searchRef}>
                 <div className="form-group">
                   <div className="input-wrapper">
-                    <input 
-                      type="text" 
-                      name="search" 
-                      id="search" 
-                      className="form-input"
-                      placeholder="Enter email, username, or #code" 
-                    />
+                    <input type="text" name="search" id="search" className="form-input" placeholder="Enter email, username, or #code" />
                     <button type="submit" className="btn btn-primary">
                       <span className="btn-icon">📤</span>
                       Send Request
@@ -206,24 +195,18 @@ const Mates = () => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="mates-grid">
                 {mates.length > 0 ? (
                   mates.map(mate => (
                     <div key={mate.requestId || mate.id || mate.mateInfo?.id} className="mate-card">
                       <div className="mate-avatar">
-                        <img 
-                          src={mate.mateInfo?.avatar_url || mate.avatar_url || "https://i.pravatar.cc/60"} 
-                          alt="avatar" 
-                          className="avatar-image" 
-                        />
+                        <img src={mate.mateInfo?.avatar_url || mate.avatar_url || "https://i.pravatar.cc/60"} alt="avatar" className="avatar-image" />
                         <div className="status-indicator online"></div>
                       </div>
-                      
+
                       <div className="mate-info">
-                        <h3 className="mate-name">
-                          {mate.mateInfo?.full_name || mate.mateInfo?.username || mate.username}
-                        </h3>
+                        <h3 className="mate-name">{mate.mateInfo?.full_name || mate.mateInfo?.username || mate.username}</h3>
                         <p className="mate-code">#{mate.mateInfo?.code || mate.code}</p>
                         <div className="mate-actions">
                           <button className="action-btn message">
@@ -242,9 +225,7 @@ const Mates = () => {
                   <div className="empty-state">
                     <div className="empty-icon">👥</div>
                     <h3 className="empty-title">No mates yet</h3>
-                    <p className="empty-description">
-                      Start building your network by adding your first mate above
-                    </p>
+                    <p className="empty-description">Start building your network by adding your first mate above</p>
                   </div>
                 )}
               </div>
@@ -259,12 +240,7 @@ const Mates = () => {
                   Pending Requests
                 </h3>
               </div>
-              <PendingRequestsSection 
-                myProfile={myProfile} 
-                fetchUserData={fetchUserData} 
-                setError={setError} 
-                setNotification={setNotification} 
-              />
+              <PendingRequestsSection myProfile={myProfile} fetchUserData={fetchUserData} setError={setError} setNotification={setNotification} />
             </div>
           </aside>
         </div>
